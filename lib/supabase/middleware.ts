@@ -1,4 +1,4 @@
-import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs"
+import { createClient } from "@supabase/supabase-js"
 import { NextResponse, type NextRequest } from "next/server"
 
 export async function updateSession(request: NextRequest) {
@@ -6,15 +6,22 @@ export async function updateSession(request: NextRequest) {
     request,
   })
 
-  const supabase = createMiddlewareClient({ req: request, res: supabaseResponse })
+  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
-  // IMPORTANT: Avoid writing any logic between createMiddlewareClient and
-  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
+  // Get the session token from cookies
+  const token = request.cookies.get("sb-access-token")?.value
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  let user = null
+  if (token) {
+    try {
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser(token)
+      user = authUser
+    } catch (error) {
+      // Token is invalid, continue without user
+    }
+  }
 
   // Protected routes - redirect to login if not authenticated
   const isAuthRoute =
@@ -38,6 +45,5 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // IMPORTANT: You *must* return the supabaseResponse object as it is.
   return supabaseResponse
 }

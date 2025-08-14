@@ -1,8 +1,11 @@
 "use server"
 
-import { createServerActionClient } from "@supabase/auth-helpers-nextjs"
-import { cookies } from "next/headers"
+import { createClient } from "@supabase/supabase-js"
 import { redirect } from "next/navigation"
+
+const createServerClient = () => {
+  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+}
 
 export async function signIn(prevState: any, formData: FormData) {
   if (!formData) {
@@ -16,7 +19,7 @@ export async function signIn(prevState: any, formData: FormData) {
     return { error: "Username and password are required" }
   }
 
-  const supabase = createServerActionClient({ cookies })
+  const supabase = createServerClient()
 
   try {
     const email = `${username}@zealothockey.com`
@@ -74,7 +77,7 @@ export async function signUp(prevState: any, formData: FormData) {
     return { error: "StarCraft Account ID must be 6-14 digits only." }
   }
 
-  const supabase = createServerActionClient({ cookies })
+  const supabase = createServerClient()
 
   try {
     const email = `${username}@zealothockey.com`
@@ -159,7 +162,7 @@ export async function signUp(prevState: any, formData: FormData) {
 }
 
 export async function signOut() {
-  const supabase = createServerActionClient({ cookies })
+  const supabase = createServerClient()
   await supabase.auth.signOut()
   redirect("/auth/login")
 }
@@ -172,7 +175,7 @@ export async function grantVerification(prevState: any, formData: FormData) {
     return { error: "Player name and admin key are required" }
   }
 
-  const supabase = createServerActionClient({ cookies })
+  const supabase = createServerClient()
 
   try {
     const { data, error } = await supabase.rpc("grant_verification", {
@@ -203,7 +206,7 @@ export async function revokeVerification(prevState: any, formData: FormData) {
     return { error: "Player name and admin key are required" }
   }
 
-  const supabase = createServerActionClient({ cookies })
+  const supabase = createServerClient()
 
   try {
     const { data, error } = await supabase.rpc("revoke_verification", {
