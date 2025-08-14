@@ -977,3 +977,156 @@ export async function finalizeAuction(leagueId: string) {
     return { error: "Failed to finalize auction" }
   }
 }
+
+// Game scoring actions
+export async function addScorer(gameId: string, userId: string) {
+  const cookieStore = cookies()
+  const supabase = createServerActionClient({ cookies: () => cookieStore })
+
+  try {
+    const { error } = await supabase.from("live_subscriptions").insert({
+      game_id: gameId,
+      user_id: userId,
+    })
+
+    if (error) {
+      return { error: error.message }
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error("Add scorer error:", error)
+    return { error: "Failed to add scorer" }
+  }
+}
+
+export async function startGame(gameId: string) {
+  const cookieStore = cookies()
+  const supabase = createServerActionClient({ cookies: () => cookieStore })
+
+  try {
+    const { error } = await supabase
+      .from("games")
+      .update({
+        status: "live",
+        started_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", gameId)
+
+    if (error) {
+      return { error: error.message }
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error("Start game error:", error)
+    return { error: "Failed to start game" }
+  }
+}
+
+export async function endGame(gameId: string) {
+  const cookieStore = cookies()
+  const supabase = createServerActionClient({ cookies: () => cookieStore })
+
+  try {
+    const { error } = await supabase
+      .from("games")
+      .update({
+        status: "completed",
+        ended_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", gameId)
+
+    if (error) {
+      return { error: error.message }
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error("End game error:", error)
+    return { error: "Failed to end game" }
+  }
+}
+
+export async function updateGameScore(gameId: string, team1Score: number, team2Score: number) {
+  const cookieStore = cookies()
+  const supabase = createServerActionClient({ cookies: () => cookieStore })
+
+  try {
+    const { error } = await supabase
+      .from("games")
+      .update({
+        team1_score: team1Score,
+        team2_score: team2Score,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", gameId)
+
+    if (error) {
+      return { error: error.message }
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error("Update game score error:", error)
+    return { error: "Failed to update game score" }
+  }
+}
+
+export async function addScoringEvent(prevState: any, formData: FormData) {
+  if (!formData) {
+    return { error: "Form data is missing" }
+  }
+
+  const gameId = formData.get("gameId")
+  const playerId = formData.get("playerId")
+  const teamId = formData.get("teamId")
+  const eventType = formData.get("eventType")
+  const eventTime = formData.get("eventTime")
+  const description = formData.get("description")
+
+  if (!gameId || !playerId || !teamId || !eventType || !eventTime) {
+    return { error: "All scoring event fields are required" }
+  }
+
+  const cookieStore = cookies()
+  const supabase = createServerActionClient({ cookies: () => cookieStore })
+
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return { error: "You must be logged in to add scoring events" }
+    }
+
+    // Get the player profile
+    const { data: player } = await supabase.from("players").select("id").eq("user_id", user.id).single()
+
+    if (!player) {
+      return { error: "You must have a player profile to add scoring events" }
+    }
+
+    const { error } = await supabase.from("game_events").insert({
+      game_id: gameId.toString(),
+      player_id: playerId.toString(),
+      team_id: teamId.toString(),
+      event_type: eventType.toString(),
+      event_time: Number.parseInt(eventTime.toString()),
+      description: description?.toString() || null,
+      recorded_by: player.id,
+    })
+
+    if (error) {
+      return { error: error.message }
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error("Add scoring event error:", error)
+    return { error: "An unexpected error occurred. Please try again." }
+  }
+}
