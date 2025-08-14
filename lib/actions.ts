@@ -61,11 +61,21 @@ export async function signUp(prevState: any, formData: FormData) {
     const { data: existingPlayer } = await supabase
       .from("players")
       .select("name")
-      .eq("name", username.toString())
+      .ilike("name", username.toString())
       .single()
 
     if (existingPlayer) {
       return { error: "Username already taken. Please choose a different username." }
+    }
+
+    const { data: existingStarcraftId } = await supabase
+      .from("players")
+      .select("starcraft_account_id")
+      .eq("starcraft_account_id", starcraftId.toString())
+      .single()
+
+    if (existingStarcraftId) {
+      return { error: "StarCraft Account ID already registered. Please use a different Account ID." }
     }
 
     const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -88,21 +98,22 @@ export async function signUp(prevState: any, formData: FormData) {
       const { error: profileError } = await supabase.from("players").insert({
         id: authData.user.id,
         name: username.toString(),
-        starcraft_id: starcraftId.toString(),
+        starcraft_account_id: starcraftId.toString(), // Added StarCraft Account ID
         elo_rating: 1000,
         wins: 0,
         losses: 0,
         games_played: 0,
+        verified: false, // Added verified field
       })
 
       if (profileError) {
         console.error("Profile creation error:", profileError)
+        return { error: "Failed to create player profile. Please try again." }
       }
 
       const { error: statsError } = await supabase.from("player_stats").insert({
         id: authData.user.id,
         player_name: username.toString(),
-        starcraft_id: starcraftId.toString(),
         elo: 1000,
         wins: 0,
         losses: 0,
@@ -127,4 +138,66 @@ export async function signOut() {
   const supabase = createClient()
   await supabase.auth.signOut()
   redirect("/auth/login")
+}
+
+export async function grantVerification(prevState: any, formData: FormData) {
+  const playerName = formData.get("playerName")
+  const adminKey = formData.get("adminKey")
+
+  if (!playerName || !adminKey) {
+    return { error: "Player name and admin key are required" }
+  }
+
+  const supabase = createClient()
+
+  try {
+    const { data, error } = await supabase.rpc("grant_verification", {
+      player_name: playerName.toString(),
+      admin_key: adminKey.toString(),
+    })
+
+    if (error) {
+      return { error: "Failed to grant verification" }
+    }
+
+    if (!data) {
+      return { error: "Invalid admin key or player not found" }
+    }
+
+    return { success: `Verification granted to ${playerName}` }
+  } catch (error) {
+    console.error("Grant verification error:", error)
+    return { error: "An unexpected error occurred" }
+  }
+}
+
+export async function revokeVerification(prevState: any, formData: FormData) {
+  const playerName = formData.get("playerName")
+  const adminKey = formData.get("adminKey")
+
+  if (!playerName || !adminKey) {
+    return { error: "Player name and admin key are required" }
+  }
+
+  const supabase = createClient()
+
+  try {
+    const { data, error } = await supabase.rpc("revoke_verification", {
+      player_name: playerName.toString(),
+      admin_key: adminKey.toString(),
+    })
+
+    if (error) {
+      return { error: "Failed to revoke verification" }
+    }
+
+    if (!data) {
+      return { error: "Invalid admin key or player not found" }
+    }
+
+    return { success: `Verification revoked from ${playerName}` }
+  } catch (error) {
+    console.error("Revoke verification error:", error)
+    return { error: "An unexpected error occurred" }
+  }
 }

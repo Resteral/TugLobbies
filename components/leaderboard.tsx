@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Trophy, Target, TrendingUp, Crown } from "lucide-react"
 import Link from "next/link"
+import { VerificationBadge } from "@/components/verification-badge" // Added verification badge import
 
 interface LeaderboardProps {
   players: any[]
@@ -59,7 +60,10 @@ export default function Leaderboard({ players }: LeaderboardProps) {
                   <div className="flex items-center space-x-4">
                     <div className="flex items-center justify-center w-8">{getPositionIcon(index + 1)}</div>
                     <div>
-                      <div className="text-white font-semibold">{player.player_name}</div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-white font-semibold">{player.player_name}</span>
+                        <VerificationBadge verified={player.verified || false} size="sm" />
+                      </div>
                       <div className="flex items-center space-x-2 mt-1">
                         <Badge className={`${getRankColor(player.rank)} border-current`}>
                           {player.rank || "Rookie"}

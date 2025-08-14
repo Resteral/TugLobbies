@@ -23,6 +23,7 @@ import Link from "next/link"
 import { updatePlayerProfile } from "@/lib/profile-actions"
 import { useState, useActionState } from "react"
 import { useFormStatus } from "react-dom"
+import { VerificationBadge } from "@/components/verification-badge" // Added verification badge import
 
 interface PlayerProfileProps {
   playerData: any
@@ -142,6 +143,7 @@ export default function PlayerProfile({
                 ) : (
                   <div className="flex items-center space-x-3">
                     <h1 className="text-3xl font-bold text-white">{playerData?.player_name}</h1>
+                    <VerificationBadge verified={playerData?.verified || false} size="lg" />
                     {isOwnProfile && (
                       <Button
                         onClick={() => setIsEditing(true)}
