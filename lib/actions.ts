@@ -18,7 +18,7 @@ export async function signIn(prevState: any, formData: FormData) {
   const supabase = createClient()
 
   try {
-    const email = `${username}@zealothockey.local`
+    const email = `${username}@zealothockey.com`
 
     const { error } = await supabase.auth.signInWithPassword({
       email: email,
@@ -26,6 +26,9 @@ export async function signIn(prevState: any, formData: FormData) {
     })
 
     if (error) {
+      if (error.message.toLowerCase().includes("email") || error.message.toLowerCase().includes("invalid")) {
+        return { error: "Invalid username or password" }
+      }
       return { error: error.message }
     }
 
@@ -52,9 +55,8 @@ export async function signUp(prevState: any, formData: FormData) {
   const supabase = createClient()
 
   try {
-    const email = `${username}@zealothockey.local`
+    const email = `${username}@zealothockey.com`
 
-    // Check if username already exists
     const { data: existingPlayer } = await supabase
       .from("players")
       .select("name")
@@ -75,15 +77,17 @@ export async function signUp(prevState: any, formData: FormData) {
     })
 
     if (authError) {
+      if (authError.message.toLowerCase().includes("email") || authError.message.toLowerCase().includes("invalid")) {
+        return { error: "Username contains invalid characters. Please use only letters, numbers, and underscores." }
+      }
       return { error: authError.message }
     }
 
-    // Create player profile
     if (authData.user) {
       const { error: profileError } = await supabase.from("players").insert({
         id: authData.user.id,
         name: username.toString(),
-        starcraft_id: starcraftId.toString(), // Added StarCraft ID field
+        starcraft_id: starcraftId.toString(),
         elo_rating: 1000,
         wins: 0,
         losses: 0,
@@ -94,11 +98,10 @@ export async function signUp(prevState: any, formData: FormData) {
         console.error("Profile creation error:", profileError)
       }
 
-      // Also create player_stats entry
       const { error: statsError } = await supabase.from("player_stats").insert({
         id: authData.user.id,
         player_name: username.toString(),
-        starcraft_id: starcraftId.toString(), // Added StarCraft ID field
+        starcraft_id: starcraftId.toString(),
         elo: 1000,
         wins: 0,
         losses: 0,
