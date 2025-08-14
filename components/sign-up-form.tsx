@@ -78,9 +78,16 @@ export default function SignUpForm() {
               id="starcraftId"
               name="starcraftId"
               type="text"
-              placeholder="YourName#1234"
+              placeholder="123456789012"
+              pattern="[0-9]{6,14}"
+              minLength={6}
+              maxLength={14}
               required
               className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
+              onInput={(e) => {
+                // Only allow numbers
+                e.currentTarget.value = e.currentTarget.value.replace(/[^0-9]/g, "")
+              }}
             />
             <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-3 text-sm text-gray-400">
               <div className="flex items-start gap-2">
@@ -90,9 +97,10 @@ export default function SignUpForm() {
                   <ol className="list-decimal list-inside space-y-1 text-xs">
                     <li>Open StarCraft II</li>
                     <li>Go to your Profile (top right corner)</li>
-                    <li>Your Account ID is displayed as "Name#1234"</li>
-                    <li>Copy the full ID including the # and numbers</li>
+                    <li>Look for your numeric Account ID (6-14 digits)</li>
+                    <li>Enter only the numbers (no letters or symbols)</li>
                   </ol>
+                  <p className="text-xs text-gray-500 mt-2">Must be 6-14 digits long</p>
                 </div>
               </div>
             </div>
