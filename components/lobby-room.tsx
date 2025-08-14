@@ -6,7 +6,7 @@ import { Users, Crown, Check, X, ArrowLeft, Play } from "lucide-react"
 import Link from "next/link"
 import { leaveLobby, toggleReady, initializeDraft } from "@/lib/lobby-actions"
 import { useRouter } from "next/navigation"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
 
 interface LobbyRoomProps {
@@ -22,7 +22,43 @@ export default function LobbyRoom({ lobby, players: initialPlayers, currentPlaye
   const [lobbyData, setLobbyData] = useState(lobby)
   const [isLeaving, setIsLeaving] = useState(false)
   const [isStartingDraft, setIsStartingDraft] = useState(false)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
   const supabase = createClient()
+
+  useEffect(() => {
+    // Create audio context for game start sound
+    audioRef.current = new Audio()
+    audioRef.current.preload = "auto"
+
+    // Use a hockey-themed sound effect URL or create one programmatically
+    const createGameStartSound = () => {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+      const oscillator = audioContext.createOscillator()
+      const gainNode = audioContext.createGain()
+
+      oscillator.connect(gainNode)
+      gainNode.connect(audioContext.destination)
+
+      // Create a hockey horn-like sound
+      oscillator.frequency.setValueAtTime(220, audioContext.currentTime)
+      oscillator.frequency.exponentialRampToValueAtTime(110, audioContext.currentTime + 0.5)
+
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime)
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1.5)
+
+      oscillator.start(audioContext.currentTime)
+      oscillator.stop(audioContext.currentTime + 1.5)
+    }
+
+    // Store the sound creation function
+    audioRef.current.playGameStart = createGameStartSound
+
+    return () => {
+      if (audioRef.current) {
+        audioRef.current = null
+      }
+    }
+  }, [])
 
   // Set up real-time subscriptions
   useEffect(() => {
@@ -75,6 +111,14 @@ export default function LobbyRoom({ lobby, players: initialPlayers, currentPlaye
 
   const handleStartGame = async () => {
     setIsStartingDraft(true)
+
+    try {
+      if (audioRef.current && audioRef.current.playGameStart) {
+        audioRef.current.playGameStart()
+      }
+    } catch (error) {
+      console.log("Could not play sound:", error)
+    }
 
     if (lobbyData.lobby_type === "4v4_draft") {
       const result = await initializeDraft(lobby.id)

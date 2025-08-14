@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import GameScoring from "@/components/game-scoring"
+import BettingPanel from "@/components/betting-panel"
 
 interface GamePageProps {
   params: {
@@ -41,12 +42,30 @@ export default async function GamePage({ params }: GamePageProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
-      <GameScoring
-        gameSession={gameSession}
-        scoreSubmissions={scoreSubmissions || []}
-        currentPlayer={currentPlayer}
-        allPlayers={playerStats || []}
-      />
+      <div className="container mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
+          {/* Main Game Scoring - Takes up 3 columns */}
+          <div className="xl:col-span-3">
+            <GameScoring
+              gameSession={gameSession}
+              scoreSubmissions={scoreSubmissions || []}
+              currentPlayer={currentPlayer}
+              allPlayers={playerStats || []}
+            />
+          </div>
+
+          {/* Betting Panel - Takes up 1 column */}
+          <div className="xl:col-span-1">
+            <BettingPanel
+              gameId={params.id}
+              playerName={currentPlayer?.player_name || ""}
+              team1={gameSession.team1 || []}
+              team2={gameSession.team2 || []}
+              gameStatus={gameSession.status}
+            />
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
