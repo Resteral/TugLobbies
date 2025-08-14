@@ -1,6 +1,7 @@
 "use server"
 
-import { createClient } from "@/lib/supabase/server"
+import { createServerActionClient } from "@supabase/auth-helpers-nextjs"
+import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 
 export async function signIn(prevState: any, formData: FormData) {
@@ -15,7 +16,7 @@ export async function signIn(prevState: any, formData: FormData) {
     return { error: "Username and password are required" }
   }
 
-  const supabase = createClient()
+  const supabase = createServerActionClient({ cookies })
 
   try {
     const email = `${username}@zealothockey.com`
@@ -55,14 +56,10 @@ export async function signUp(prevState: any, formData: FormData) {
 
   const usernameStr = username.toString()
 
-  console.log("Validating username:", usernameStr)
-
-  // Check length first
   if (usernameStr.length < 3 || usernameStr.length > 20) {
     return { error: "Username must be between 3 and 20 characters long." }
   }
 
-  // Check for valid characters
   const usernameRegex = /^[a-zA-Z0-9_-]+$/
   if (!usernameRegex.test(usernameStr)) {
     return {
@@ -77,7 +74,7 @@ export async function signUp(prevState: any, formData: FormData) {
     return { error: "StarCraft Account ID must be 6-14 digits only." }
   }
 
-  const supabase = createClient()
+  const supabase = createServerActionClient({ cookies })
 
   try {
     const email = `${username}@zealothockey.com`
@@ -162,7 +159,7 @@ export async function signUp(prevState: any, formData: FormData) {
 }
 
 export async function signOut() {
-  const supabase = createClient()
+  const supabase = createServerActionClient({ cookies })
   await supabase.auth.signOut()
   redirect("/auth/login")
 }
@@ -175,7 +172,7 @@ export async function grantVerification(prevState: any, formData: FormData) {
     return { error: "Player name and admin key are required" }
   }
 
-  const supabase = createClient()
+  const supabase = createServerActionClient({ cookies })
 
   try {
     const { data, error } = await supabase.rpc("grant_verification", {
@@ -206,7 +203,7 @@ export async function revokeVerification(prevState: any, formData: FormData) {
     return { error: "Player name and admin key are required" }
   }
 
-  const supabase = createClient()
+  const supabase = createServerActionClient({ cookies })
 
   try {
     const { data, error } = await supabase.rpc("revoke_verification", {
