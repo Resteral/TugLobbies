@@ -6,8 +6,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Loader2, HopIcon as Hockey } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useEffect } from "react"
 import { signIn } from "@/lib/actions"
 
 function SubmitButton() {
@@ -32,14 +30,7 @@ function SubmitButton() {
 }
 
 export default function LoginForm() {
-  const router = useRouter()
   const [state, formAction] = useActionState(signIn, null)
-
-  useEffect(() => {
-    if (state?.success) {
-      window.location.href = "/dashboard"
-    }
-  }, [state])
 
   return (
     <div className="w-full max-w-md space-y-8">
