@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
-import { redirect } from "next/navigation"
-import GameScoring from "@/components/game-scoring"
-import BettingPanel from "@/components/betting-panel"
+import { redirect, notFound } from "next/navigation"
+import DraftInterface from "@/components/draft-interface"
 
 interface GamePageProps {
   params: {
@@ -19,53 +18,38 @@ export default async function GamePage({ params }: GamePageProps) {
     redirect("/auth/login")
   }
 
-  // Get game session
-  const { data: gameSession } = await supabase.from("game_sessions").select("*").eq("id", params.id).single()
+  // Get player profile
+  const { data: player } = await supabase.from("players").select("*").eq("id", user.id).single()
 
-  if (!gameSession) {
-    redirect("/dashboard")
+  if (!player) {
+    redirect("/auth/login")
   }
 
-  // Get score submissions
-  const { data: scoreSubmissions } = await supabase
-    .from("score_submissions")
-    .select("*")
-    .eq("lobby_id", gameSession.lobby_id)
-    .order("created_at", { ascending: false })
+  // Get lobby details
+  const { data: lobby } = await supabase.from("lobbies").select("*").eq("id", params.id).single()
 
-  // Get current user's player data
-  const { data: currentPlayer } = await supabase.from("player_stats").select("*").eq("id", user.id).single()
+  if (!lobby) {
+    notFound()
+  }
 
-  // Get all players in the game
-  const allPlayers = [...(gameSession.team1 || []), ...(gameSession.team2 || [])]
-  const { data: playerStats } = await supabase.from("player_stats").select("*").in("player_name", allPlayers)
+  // Get lobby players with their ELO ratings
+  const { data: lobbyPlayers } = await supabase
+    .from("lobby_players")
+    .select(`
+      *,
+      players!inner(name, elo_rating, profile_picture, banner_image)
+    `)
+    .eq("lobby_id", params.id)
+    .order("joined_at", { ascending: true })
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
-          {/* Main Game Scoring - Takes up 3 columns */}
-          <div className="xl:col-span-3">
-            <GameScoring
-              gameSession={gameSession}
-              scoreSubmissions={scoreSubmissions || []}
-              currentPlayer={currentPlayer}
-              allPlayers={playerStats || []}
-            />
-          </div>
-
-          {/* Betting Panel - Takes up 1 column */}
-          <div className="xl:col-span-1">
-            <BettingPanel
-              gameId={params.id}
-              playerName={currentPlayer?.player_name || ""}
-              team1={gameSession.team1 || []}
-              team2={gameSession.team2 || []}
-              gameStatus={gameSession.status}
-            />
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-900 text-white">
+      <DraftInterface
+        lobbyId={params.id}
+        currentPlayer={player}
+        lobbyPlayers={lobbyPlayers || []}
+        lobbyType={lobby.lobby_type}
+      />
     </div>
   )
 }

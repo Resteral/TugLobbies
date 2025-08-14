@@ -4,8 +4,10 @@ import { useActionState } from "react"
 import { useFormStatus } from "react-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Loader2, HopIcon as Hockey } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useEffect } from "react"
 import { signIn } from "@/lib/actions"
 
 function SubmitButton() {
@@ -30,18 +32,20 @@ function SubmitButton() {
 }
 
 export default function LoginForm() {
+  const router = useRouter()
   const [state, formAction] = useActionState(signIn, null)
+
+  useEffect(() => {
+    if (state?.success) {
+      router.push("/")
+    }
+  }, [state, router])
 
   return (
     <div className="w-full max-w-md space-y-8">
       <div className="space-y-2 text-center">
-        <div className="flex justify-center mb-4">
-          <div className="p-3 bg-blue-600 rounded-full">
-            <Hockey className="h-8 w-8 text-white" />
-          </div>
-        </div>
         <h1 className="text-4xl font-bold tracking-tight text-white">Welcome Back</h1>
-        <p className="text-lg text-gray-400">Sign in to Zealot Hockey</p>
+        <p className="text-lg text-gray-400">Sign in to your account</p>
       </div>
 
       <form action={formAction} className="space-y-6">
@@ -51,22 +55,16 @@ export default function LoginForm() {
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <label htmlFor="username" className="block text-sm font-medium text-gray-300">
-              Username
+            <label htmlFor="email" className="block text-sm font-medium text-gray-300">
+              Email
             </label>
             <Input
-              id="username"
-              name="username"
-              type="text"
-              placeholder="Your username"
-              pattern="[a-zA-Z0-9_-]{3,20}"
-              minLength={3}
-              maxLength={20}
+              id="email"
+              name="email"
+              type="email"
+              placeholder="you@example.com"
               required
               className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
-              onInput={(e) => {
-                e.currentTarget.value = e.currentTarget.value.replace(/[^a-zA-Z0-9_-]/g, "")
-              }}
             />
           </div>
           <div className="space-y-2">
