@@ -53,6 +53,21 @@ export async function signUp(prevState: any, formData: FormData) {
     return { error: "Username, password, and StarCraft Account ID are required" }
   }
 
+  const usernameStr = username.toString()
+  const usernameRegex = /^[a-zA-Z0-9_-]{3,20}$/
+  if (!usernameRegex.test(usernameStr)) {
+    return {
+      error:
+        "Username contains invalid characters. Please use only letters, numbers, underscores, and hyphens (3-20 characters).",
+    }
+  }
+
+  const starcraftIdStr = starcraftId.toString()
+  const starcraftIdRegex = /^[0-9]{6,14}$/
+  if (!starcraftIdRegex.test(starcraftIdStr)) {
+    return { error: "StarCraft Account ID must be 6-14 digits only." }
+  }
+
   const supabase = createClient()
 
   try {
@@ -88,22 +103,25 @@ export async function signUp(prevState: any, formData: FormData) {
     })
 
     if (authError) {
-      if (authError.message.toLowerCase().includes("email") || authError.message.toLowerCase().includes("invalid")) {
-        return { error: "Username contains invalid characters. Please use only letters, numbers, and underscores." }
+      if (authError.message.includes("User already registered")) {
+        return { error: "An account with this username already exists." }
       }
-      return { error: authError.message }
+      if (authError.message.includes("Password")) {
+        return { error: "Password must be at least 6 characters long." }
+      }
+      return { error: "Failed to create account. Please try again." }
     }
 
     if (authData.user) {
       const { error: profileError } = await supabase.from("players").insert({
         id: authData.user.id,
         name: username.toString(),
-        starcraft_account_id: starcraftId.toString(), // Added StarCraft Account ID
+        starcraft_account_id: starcraftId.toString(),
         elo_rating: 1000,
         wins: 0,
         losses: 0,
         games_played: 0,
-        verified: false, // Added verified field
+        verified: false,
       })
 
       if (profileError) {
