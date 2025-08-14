@@ -65,9 +65,16 @@ export default function SignUpForm() {
               name="username"
               type="text"
               placeholder="Your unique username"
+              pattern="[a-zA-Z0-9_-]{3,20}"
+              minLength={3}
+              maxLength={20}
               required
               className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
+              onInput={(e) => {
+                e.currentTarget.value = e.currentTarget.value.replace(/[^a-zA-Z0-9_-]/g, "")
+              }}
             />
+            <p className="text-xs text-gray-500">3-20 characters, letters, numbers, underscore, and hyphen only</p>
           </div>
 
           <div className="space-y-2">
