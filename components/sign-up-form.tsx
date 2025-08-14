@@ -71,10 +71,16 @@ export default function SignUpForm() {
               required
               className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
               onInput={(e) => {
-                e.currentTarget.value = e.currentTarget.value.replace(/[^a-zA-Z0-9_-]/g, "")
+                const value = e.currentTarget.value
+                const filtered = value.replace(/[^a-zA-Z0-9_-]/g, "")
+                if (value !== filtered) {
+                  e.currentTarget.value = filtered
+                }
               }}
             />
-            <p className="text-xs text-gray-500">3-20 characters, letters, numbers, underscore, and hyphen only</p>
+            <p className="text-xs text-gray-500">
+              3-20 characters. Letters, numbers, underscore (_), and hyphen (-) only. No spaces or special characters.
+            </p>
           </div>
 
           <div className="space-y-2">

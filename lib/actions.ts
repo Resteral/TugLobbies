@@ -54,11 +54,20 @@ export async function signUp(prevState: any, formData: FormData) {
   }
 
   const usernameStr = username.toString()
-  const usernameRegex = /^[a-zA-Z0-9_-]{3,20}$/
+
+  console.log("Validating username:", usernameStr)
+
+  // Check length first
+  if (usernameStr.length < 3 || usernameStr.length > 20) {
+    return { error: "Username must be between 3 and 20 characters long." }
+  }
+
+  // Check for valid characters
+  const usernameRegex = /^[a-zA-Z0-9_-]+$/
   if (!usernameRegex.test(usernameStr)) {
     return {
       error:
-        "Username contains invalid characters. Please use only letters, numbers, underscores, and hyphens (3-20 characters).",
+        "Username can only contain letters, numbers, underscores (_), and hyphens (-). No spaces or special characters allowed.",
     }
   }
 
