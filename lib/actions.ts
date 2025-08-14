@@ -8,18 +8,20 @@ export async function signIn(prevState: any, formData: FormData) {
     return { error: "Form data is missing" }
   }
 
-  const email = formData.get("email")
+  const username = formData.get("username")
   const password = formData.get("password")
 
-  if (!email || !password) {
-    return { error: "Email and password are required" }
+  if (!username || !password) {
+    return { error: "Username and password are required" }
   }
 
   const supabase = createClient()
 
   try {
+    const email = `${username}@zealothockey.local`
+
     const { error } = await supabase.auth.signInWithPassword({
-      email: email.toString(),
+      email: email,
       password: password.toString(),
     })
 
@@ -39,19 +41,32 @@ export async function signUp(prevState: any, formData: FormData) {
     return { error: "Form data is missing" }
   }
 
-  const email = formData.get("email")
+  const username = formData.get("username")
   const password = formData.get("password")
-  const playerName = formData.get("playerName")
+  const starcraftId = formData.get("starcraftId")
 
-  if (!email || !password || !playerName) {
-    return { error: "Email, password, and player name are required" }
+  if (!username || !password || !starcraftId) {
+    return { error: "Username, password, and StarCraft Account ID are required" }
   }
 
   const supabase = createClient()
 
   try {
+    const email = `${username}@zealothockey.local`
+
+    // Check if username already exists
+    const { data: existingPlayer } = await supabase
+      .from("players")
+      .select("name")
+      .eq("name", username.toString())
+      .single()
+
+    if (existingPlayer) {
+      return { error: "Username already taken. Please choose a different username." }
+    }
+
     const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: email.toString(),
+      email: email,
       password: password.toString(),
       options: {
         emailRedirectTo:
@@ -67,7 +82,8 @@ export async function signUp(prevState: any, formData: FormData) {
     if (authData.user) {
       const { error: profileError } = await supabase.from("players").insert({
         id: authData.user.id,
-        name: playerName.toString(),
+        name: username.toString(),
+        starcraft_id: starcraftId.toString(), // Added StarCraft ID field
         elo_rating: 1000,
         wins: 0,
         losses: 0,
@@ -81,7 +97,8 @@ export async function signUp(prevState: any, formData: FormData) {
       // Also create player_stats entry
       const { error: statsError } = await supabase.from("player_stats").insert({
         id: authData.user.id,
-        player_name: playerName.toString(),
+        player_name: username.toString(),
+        starcraft_id: starcraftId.toString(), // Added StarCraft ID field
         elo: 1000,
         wins: 0,
         losses: 0,
@@ -95,7 +112,7 @@ export async function signUp(prevState: any, formData: FormData) {
       }
     }
 
-    return { success: "Check your email to confirm your account." }
+    return { success: "Account created successfully! You can now sign in." }
   } catch (error) {
     console.error("Sign up error:", error)
     return { error: "An unexpected error occurred. Please try again." }

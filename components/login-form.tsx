@@ -60,14 +60,14 @@ export default function LoginForm() {
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <label htmlFor="email" className="block text-sm font-medium text-gray-300">
-              Email
+            <label htmlFor="username" className="block text-sm font-medium text-gray-300">
+              Username
             </label>
             <Input
-              id="email"
-              name="email"
-              type="email"
-              placeholder="you@example.com"
+              id="username"
+              name="username"
+              type="text"
+              placeholder="Your username"
               required
               className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
             />

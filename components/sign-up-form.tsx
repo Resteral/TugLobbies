@@ -4,7 +4,7 @@ import { useActionState } from "react"
 import { useFormStatus } from "react-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Loader2, HopIcon as Hockey } from "lucide-react"
+import { Loader2, HopIcon as Hockey, ExternalLink } from "lucide-react"
 import Link from "next/link"
 import { signUp } from "@/lib/actions"
 
@@ -57,31 +57,47 @@ export default function SignUpForm() {
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <label htmlFor="playerName" className="block text-sm font-medium text-gray-300">
-              Player Name
+            <label htmlFor="username" className="block text-sm font-medium text-gray-300">
+              Username
             </label>
             <Input
-              id="playerName"
-              name="playerName"
+              id="username"
+              name="username"
               type="text"
-              placeholder="Your hockey name"
+              placeholder="Your unique username"
               required
               className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
             />
           </div>
+
           <div className="space-y-2">
-            <label htmlFor="email" className="block text-sm font-medium text-gray-300">
-              Email
+            <label htmlFor="starcraftId" className="block text-sm font-medium text-gray-300">
+              StarCraft Account ID
             </label>
             <Input
-              id="email"
-              name="email"
-              type="email"
-              placeholder="you@example.com"
+              id="starcraftId"
+              name="starcraftId"
+              type="text"
+              placeholder="YourName#1234"
               required
               className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
             />
+            <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-3 text-sm text-gray-400">
+              <div className="flex items-start gap-2">
+                <ExternalLink className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-gray-300 mb-1">How to find your StarCraft Account ID:</p>
+                  <ol className="list-decimal list-inside space-y-1 text-xs">
+                    <li>Open StarCraft II</li>
+                    <li>Go to your Profile (top right corner)</li>
+                    <li>Your Account ID is displayed as "Name#1234"</li>
+                    <li>Copy the full ID including the # and numbers</li>
+                  </ol>
+                </div>
+              </div>
+            </div>
           </div>
+
           <div className="space-y-2">
             <label htmlFor="password" className="block text-sm font-medium text-gray-300">
               Password
