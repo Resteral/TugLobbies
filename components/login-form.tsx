@@ -37,9 +37,9 @@ export default function LoginForm() {
 
   useEffect(() => {
     if (state?.success) {
-      router.push("/dashboard")
+      window.location.href = "/dashboard"
     }
-  }, [state, router])
+  }, [state])
 
   return (
     <div className="w-full max-w-md space-y-8">
