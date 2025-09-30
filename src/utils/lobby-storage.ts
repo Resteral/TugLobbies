@@ -1,96 +1,156 @@
 /**
- * Lobby storage utilities for persistent lobby management
+ * Lobby storage utility with localStorage backend (replaces Supabase for free version)
  */
 
-import { StoredLobby, StoredLobbyPlayer } from '../types/zealot-hockey';
+import { StoredLobby, StoredLobbyPlayer } from '../types/zealot-hockey'
 
-const STORAGE_KEY = 'tug-lobbies';
-
-/**
- * Load lobbies from localStorage
- */
-export const loadLobbies = (): StoredLobby[] => {
+// Mock database using localStorage
+const getFromStorage = (key: string) => {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const lobbies = JSON.parse(stored);
-      // Convert date strings back to Date objects
-      return lobbies.map((lobby: any) => ({
-        ...lobby,
-        createdAt: new Date(lobby.createdAt),
-        players: lobby.players.map((player: any) => ({
-          ...player,
-          lastPlayed: new Date(player.lastPlayed),
-          joinDate: new Date(player.joinDate)
-        }))
-      }));
-    }
-  } catch (error) {
-    console.error('Error loading lobbies from storage:', error);
-  }
-  return [];
-};
-
-/**
- * Save lobbies to localStorage
- */
-export const saveLobbies = (lobbies: StoredLobby[]): void => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(lobbies));
-  } catch (error) {
-    console.error('Error saving lobbies to storage:', error);
+    const item = localStorage.getItem(`tug_lobbies_${key}`);
+    return item ? JSON.parse(item) : [];
+  } catch {
+    return [];
   }
 };
 
-/**
- * Get lobby by ID
- */
-export const getLobbyById = (lobbyId: string): StoredLobby | null => {
-  const lobbies = loadLobbies();
-  return lobbies.find(lobby => lobby.id === lobbyId) || null;
+const setToStorage = (key: string, value: any) => {
+  try {
+    localStorage.setItem(`tug_lobbies_${key}`, JSON.stringify(value));
+  } catch (error) {
+    console.error('Error saving to localStorage:', error);
+  }
 };
 
-/**
- * Update a lobby
- */
-export const updateLobby = (updatedLobby: StoredLobby): void => {
-  const lobbies = loadLobbies();
-  const updatedLobbies = lobbies.map(lobby => 
-    lobby.id === updatedLobby.id ? updatedLobby : lobby
-  );
-  saveLobbies(updatedLobbies);
+// Initialize with some demo data
+const initializeDemoData = () => {
+  const existingLobbies = getFromStorage('lobbies');
+  if (existingLobbies.length === 0) {
+    const demoLobbies: StoredLobby[] = [
+      {
+        id: 'lobby-1',
+        name: 'Zealot Hockey 1v1 Lobby',
+        gameType: 'zealot-hockey',
+        players: [
+          {
+            id: 'demo-player-1',
+            name: 'ZealotMaster',
+            elo: 1450,
+            matchesPlayed: 25,
+            wins: 18,
+            losses: 7,
+            winRate: 72,
+            lastPlayed: new Date(),
+            joinDate: new Date(),
+            gameStats: {},
+            isCaptain: true,
+            team: 'A',
+            ready: true
+          },
+          {
+            id: 'demo-player-2',
+            name: 'HockeyPro',
+            elo: 1380,
+            matchesPlayed: 22,
+            wins: 15,
+            losses: 7,
+            winRate: 68,
+            lastPlayed: new Date(),
+            joinDate: new Date(),
+            gameStats: {},
+            isCaptain: true,
+            team: 'B',
+            ready: true
+          }
+        ],
+        captainIds: ['demo-player-1', 'demo-player-2'],
+        status: 'waiting',
+        createdBy: 'System',
+        createdAt: new Date(),
+        draftType: 'snake',
+        maxPlayers: 2
+      }
+    ];
+    setToStorage('lobbies', demoLobbies);
+  }
 };
 
-/**
- * Create a new lobby
- */
-export const createLobby = (lobbyData: Partial<StoredLobby>): StoredLobby => {
-  const newLobby: StoredLobby = {
-    id: lobbyData.id || Date.now().toString(),
-    name: lobbyData.name || 'New Lobby',
-    gameType: lobbyData.gameType || 'zealot-hockey',
-    players: lobbyData.players || [],
-    captainIds: lobbyData.captainIds || [],
-    status: lobbyData.status || 'waiting',
-    createdBy: lobbyData.createdBy || 'System',
-    createdAt: new Date(),
-    draftType: lobbyData.draftType || 'snake',
-    maxPlayers: lobbyData.maxPlayers || 6,
-    ...lobbyData
+export const loadLobbies = async (): Promise<StoredLobby[]> => {
+  initializeDemoData();
+  const lobbies = getFromStorage('lobbies');
+  return lobbies.map((lobby: any) => ({
+    ...lobby,
+    createdAt: new Date(lobby.createdAt),
+    players: lobby.players.map((player: any) => ({
+      ...player,
+      lastPlayed: new Date(player.lastPlayed),
+      joinDate: new Date(player.joinDate)
+    }))
+  }));
+};
+
+export const getLobbyById = async (lobbyId: string): Promise<StoredLobby | null> => {
+  const lobbies = getFromStorage('lobbies');
+  const lobby = lobbies.find((l: StoredLobby) => l.id === lobbyId);
+  
+  if (!lobby) return null;
+  
+  return {
+    ...lobby,
+    createdAt: new Date(lobby.createdAt),
+    players: lobby.players.map((player: any) => ({
+      ...player,
+      lastPlayed: new Date(player.lastPlayed),
+      joinDate: new Date(player.joinDate)
+    }))
   };
+};
 
-  const lobbies = loadLobbies();
-  const updatedLobbies = [...lobbies, newLobby];
-  saveLobbies(updatedLobbies);
+export const createLobby = async (lobbyData: {
+  name: string;
+  gameType: string;
+  players: StoredLobbyPlayer[];
+  captainIds: string[];
+  status: 'waiting' | 'drafting' | 'ready' | 'in-progress';
+  createdBy: string;
+  draftType: 'snake' | 'auction';
+  maxPlayers: number;
+  id?: string;
+}): Promise<StoredLobby> => {
+  const lobbies = getFromStorage('lobbies');
+  const lobbyId = lobbyData.id || `lobby-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  
+  const newLobby: StoredLobby = {
+    id: lobbyId,
+    name: lobbyData.name,
+    gameType: lobbyData.gameType,
+    players: lobbyData.players,
+    captainIds: lobbyData.captainIds,
+    status: lobbyData.status,
+    createdBy: lobbyData.createdBy,
+    createdAt: new Date(),
+    draftType: lobbyData.draftType,
+    maxPlayers: lobbyData.maxPlayers
+  };
+  
+  lobbies.push(newLobby);
+  setToStorage('lobbies', lobbies);
   
   return newLobby;
 };
 
-/**
- * Delete a lobby
- */
-export const deleteLobby = (lobbyId: string): void => {
-  const lobbies = loadLobbies();
-  const updatedLobbies = lobbies.filter(lobby => lobby.id !== lobbyId);
-  saveLobbies(updatedLobbies);
+export const updateLobby = async (lobby: StoredLobby): Promise<void> => {
+  const lobbies = getFromStorage('lobbies');
+  const lobbyIndex = lobbies.findIndex((l: StoredLobby) => l.id === lobby.id);
+  
+  if (lobbyIndex !== -1) {
+    lobbies[lobbyIndex] = lobby;
+    setToStorage('lobbies', lobbies);
+  }
+};
+
+export const deleteLobby = async (lobbyId: string): Promise<void> => {
+  const lobbies = getFromStorage('lobbies');
+  const filteredLobbies = lobbies.filter((l: StoredLobby) => l.id !== lobbyId);
+  setToStorage('lobbies', filteredLobbies);
 };

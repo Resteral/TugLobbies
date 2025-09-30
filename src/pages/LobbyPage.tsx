@@ -1,5 +1,5 @@
 /**
- * Individual lobby page for draft management
+ * Individual lobby page for draft management with Supabase backend
  */
 
 import React, { useState, useEffect } from 'react';
@@ -9,88 +9,7 @@ import { Button } from '../components/ui/button';
 import { Users, Crown, Sword, Shield, UserPlus, UserMinus, Play, ArrowLeft, Trophy } from 'lucide-react';
 import { Badge } from '../components/ui/badge';
 import { getGameTypeById } from '../data/game-types';
-import { getLobbyById, updateLobby, createLobby, StoredLobby, StoredLobbyPlayer } from '../utils/lobby-storage';
-
-interface LobbyPlayer extends Player {
-  isCaptain?: boolean;
-  team?: 'A' | 'B';
-  draftOrder?: number;
-  ready?: boolean;
-}
-
-interface Lobby {
-  id: string;
-  name: string;
-  gameType: string;
-  players: LobbyPlayer[];
-  captainIds: string[];
-  status: 'waiting' | 'drafting' | 'ready' | 'in-progress';
-  createdBy: string;
-  createdAt: Date;
-  draftType: 'snake' | 'auction';
-  maxPlayers: number;
-}
-
-// Mock data - in a real app this would come from an API
-const mockLobbies: Lobby[] = [
-  {
-    id: '1',
-    name: 'Competitive 3v3',
-    gameType: '3v3-hockey',
-    players: [
-      {
-        id: '1',
-        name: 'ZealotMaster',
-        elo: 1450,
-        matchesPlayed: 25,
-        wins: 18,
-        losses: 7,
-        winRate: 72,
-        lastPlayed: new Date('2024-01-15'),
-        joinDate: new Date('2024-01-01'),
-        gameStats: {},
-        isCaptain: true,
-        team: 'A',
-        ready: true
-      },
-      {
-        id: '2',
-        name: 'HockeyPro',
-        elo: 1380,
-        matchesPlayed: 22,
-        wins: 15,
-        losses: 7,
-        winRate: 68,
-        lastPlayed: new Date('2024-01-14'),
-        joinDate: new Date('2024-01-02'),
-        gameStats: {},
-        isCaptain: true,
-        team: 'B',
-        ready: true
-      },
-      {
-        id: '3',
-        name: 'SC2Champ',
-        elo: 1320,
-        matchesPlayed: 20,
-        wins: 12,
-        losses: 8,
-        winRate: 60,
-        lastPlayed: new Date('2024-01-13'),
-        joinDate: new Date('2024-01-03'),
-        gameStats: {},
-        team: 'A',
-        ready: true
-      }
-    ],
-    captainIds: ['1', '2'],
-    status: 'ready',
-    createdBy: 'ZealotMaster',
-    createdAt: new Date(),
-    draftType: 'snake',
-    maxPlayers: 6
-  }
-];
+import { getLobbyById, updateLobby, createLobby, StoredLobby } from '../utils/lobby-storage';
 
 export default function LobbyPage() {
   const { lobbyId } = useParams<{ lobbyId: string }>();
@@ -99,12 +18,18 @@ export default function LobbyPage() {
   const [draftPhase, setDraftPhase] = useState<'waiting' | 'drafting' | 'complete'>('waiting');
   const [currentDrafter, setCurrentDrafter] = useState<'captainA' | 'captainB'>('captainB');
   const [draftRound, setDraftRound] = useState(1);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (lobbyId) {
-      console.log('Looking for lobby:', lobbyId);
-      const foundLobby = getLobbyById(lobbyId);
-      console.log('Found lobby:', foundLobby);
+      loadLobby();
+    }
+  }, [lobbyId]);
+
+  const loadLobby = async () => {
+    setLoading(true);
+    try {
+      const foundLobby = await getLobbyById(lobbyId!);
       
       if (foundLobby) {
         setLobby(foundLobby);
@@ -116,8 +41,7 @@ export default function LobbyPage() {
         }
       } else {
         // Create a demo lobby if none exists (for testing)
-        console.log('No lobby found, creating demo lobby');
-        const demoLobby = createLobby({
+        const demoLobby = await createLobby({
           id: lobbyId,
           name: 'Demo Lobby',
           gameType: 'zealot-hockey',
@@ -156,18 +80,21 @@ export default function LobbyPage() {
           captainIds: ['demo-player-1', 'demo-player-2'],
           status: 'waiting',
           createdBy: 'DemoUser',
-          createdAt: new Date().toISOString(),
           draftType: 'snake',
           maxPlayers: 6
         });
         setLobby(demoLobby);
       }
+    } catch (error) {
+      console.error('Error loading lobby:', error);
+    } finally {
+      setLoading(false);
     }
-  }, [lobbyId]);
+  };
 
   const gameType = lobby ? getGameTypeById(lobby.gameType) : null;
 
-  const handleDraftPick = (playerId: string) => {
+  const handleDraftPick = async (playerId: string) => {
     if (!lobby) return;
 
     const playerIndex = lobby.players.findIndex(p => p.id === playerId);
@@ -187,41 +114,54 @@ export default function LobbyPage() {
       players: updatedPlayers
     };
 
-    setLobby(updatedLobby);
-    updateLobby(updatedLobby);
+    try {
+      await updateLobby(updatedLobby);
+      setLobby(updatedLobby);
 
-    // Snake draft logic
-    const nextDrafter = currentDrafter === 'captainA' ? 'captainB' : 'captainA';
-    const remainingUndrafted = updatedPlayers.filter(p => !p.team && !p.isCaptain).length;
+      // Snake draft logic
+      const nextDrafter = currentDrafter === 'captainA' ? 'captainB' : 'captainA';
+      const remainingUndrafted = updatedPlayers.filter(p => !p.team && !p.isCaptain).length;
 
-    if (remainingUndrafted === 0) {
-      setDraftPhase('complete');
-    } else {
-      const isEvenRound = draftRound % 2 === 0;
-      const nextRound = isEvenRound ? draftRound + 1 : draftRound;
-      const nextDraftOrder = isEvenRound ? 
-        (nextDrafter === 'captainA' ? 'captainB' : 'captainA') : 
-        nextDrafter;
+      if (remainingUndrafted === 0) {
+        setDraftPhase('complete');
+        // Update lobby status to ready
+        const finalLobby = { ...updatedLobby, status: 'ready' as const };
+        await updateLobby(finalLobby);
+        setLobby(finalLobby);
+      } else {
+        const isEvenRound = draftRound % 2 === 0;
+        const nextRound = isEvenRound ? draftRound + 1 : draftRound;
+        const nextDraftOrder = isEvenRound ? 
+          (nextDrafter === 'captainA' ? 'captainB' : 'captainA') : 
+          nextDrafter;
 
-      setCurrentDrafter(nextDraftOrder);
-      if (!isEvenRound) {
-        setDraftRound(draftRound + 1);
+        setCurrentDrafter(nextDraftOrder);
+        if (!isEvenRound) {
+          setDraftRound(draftRound + 1);
+        }
       }
+    } catch (error) {
+      console.error('Error updating draft pick:', error);
     }
   };
 
-  const startDraft = () => {
+  const startDraft = async () => {
     if (!lobby) return;
     
     const updatedLobby = {
       ...lobby,
       status: 'drafting' as const
     };
-    setLobby(updatedLobby);
-    updateLobby(updatedLobby);
-    setDraftPhase('drafting');
-    setCurrentDrafter('captainB'); // Second highest ELO picks first
-    setDraftRound(1);
+    
+    try {
+      await updateLobby(updatedLobby);
+      setLobby(updatedLobby);
+      setDraftPhase('drafting');
+      setCurrentDrafter('captainB'); // Second highest ELO picks first
+      setDraftRound(1);
+    } catch (error) {
+      console.error('Error starting draft:', error);
+    }
   };
 
   const getTeamPlayers = (team: 'A' | 'B') => {
@@ -233,6 +173,17 @@ export default function LobbyPage() {
     if (!lobby) return [];
     return lobby.players.filter(p => !p.team && !p.isCaptain);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white p-4 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400 mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading lobby...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!lobby) {
     return (

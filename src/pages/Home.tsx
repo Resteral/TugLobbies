@@ -1,5 +1,5 @@
 /**
- * Home page for TUG Lobbies - Main matchmaking hub
+ * Home page for TUG Lobbies - Main matchmaking hub with Supabase backend
  */
 
 import React, { useState, useEffect } from 'react';
@@ -17,67 +17,79 @@ export default function Home() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [lobbies, setLobbies] = useState<StoredLobby[]>([]);
   const [activeTab, setActiveTab] = useState<'lobbies' | 'matchmaking' | 'discord'>('lobbies');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load initial data
-    const initialLobbies = loadLobbies();
-    setLobbies(initialLobbies);
-    
-    // Mock players data
-    const mockPlayers: Player[] = [
-      {
-        id: '1',
-        name: 'ZealotMaster',
-        elo: 1450,
-        matchesPlayed: 25,
-        wins: 18,
-        losses: 7,
-        winRate: 72,
-        lastPlayed: new Date().toISOString(),
-        joinDate: new Date().toISOString(),
-        gameStats: {}
-      },
-      {
-        id: '2',
-        name: 'HockeyPro',
-        elo: 1380,
-        matchesPlayed: 22,
-        wins: 15,
-        losses: 7,
-        winRate: 68,
-        lastPlayed: new Date().toISOString(),
-        joinDate: new Date().toISOString(),
-        gameStats: {}
-      },
-      {
-        id: '3',
-        name: 'SC2Champ',
-        elo: 1420,
-        matchesPlayed: 30,
-        wins: 20,
-        losses: 10,
-        winRate: 67,
-        lastPlayed: new Date().toISOString(),
-        joinDate: new Date().toISOString(),
-        gameStats: {}
-      },
-      {
-        id: '4',
-        name: 'BeginnerPlayer',
-        elo: 1200,
-        matchesPlayed: 15,
-        wins: 8,
-        losses: 7,
-        winRate: 53,
-        lastPlayed: new Date().toISOString(),
-        joinDate: new Date().toISOString(),
-        gameStats: {}
-      }
-    ];
-    setPlayers(mockPlayers);
+    loadInitialData();
   }, []);
 
-  const handleCreateLobby = (gameTypeId: string, draftType: 'snake' | 'auction') => {
+  const loadInitialData = async () => {
+    setLoading(true);
+    try {
+      // Load lobbies from Supabase
+      const initialLobbies = await loadLobbies();
+      setLobbies(initialLobbies);
+      
+      // For now, using mock players - in a real app, you'd fetch from Supabase
+      const mockPlayers: Player[] = [
+        {
+          id: '1',
+          name: 'ZealotMaster',
+          elo: 1450,
+          matchesPlayed: 25,
+          wins: 18,
+          losses: 7,
+          winRate: 72,
+          lastPlayed: new Date().toISOString(),
+          joinDate: new Date().toISOString(),
+          gameStats: {}
+        },
+        {
+          id: '2',
+          name: 'HockeyPro',
+          elo: 1380,
+          matchesPlayed: 22,
+          wins: 15,
+          losses: 7,
+          winRate: 68,
+          lastPlayed: new Date().toISOString(),
+          joinDate: new Date().toISOString(),
+          gameStats: {}
+        },
+        {
+          id: '3',
+          name: 'SC2Champ',
+          elo: 1420,
+          matchesPlayed: 30,
+          wins: 20,
+          losses: 10,
+          winRate: 67,
+          lastPlayed: new Date().toISOString(),
+          joinDate: new Date().toISOString(),
+          gameStats: {}
+        },
+        {
+          id: '4',
+          name: 'BeginnerPlayer',
+          elo: 1200,
+          matchesPlayed: 15,
+          wins: 8,
+          losses: 7,
+          winRate: 53,
+          lastPlayed: new Date().toISOString(),
+          joinDate: new Date().toISOString(),
+          gameStats: {}
+        }
+      ];
+      setPlayers(mockPlayers);
+    } catch (error) {
+      console.error('Error loading initial data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateLobby = async (gameTypeId: string, draftType: 'snake' | 'auction') => {
     const gameTypes = {
       'zealot-hockey': { name: 'Zealot Hockey 1v1', maxPlayers: 2 },
       '2v2-hockey': { name: 'Zealot Hockey 2v2', maxPlayers: 4 },
@@ -91,7 +103,7 @@ export default function Home() {
 
     const gameType = gameTypes[gameTypeId as keyof typeof gameTypes] || gameTypes['zealot-hockey'];
     
-    const newLobby = createLobby({
+    const newLobby = await createLobby({
       name: `${gameType.name} Lobby`,
       gameType: gameTypeId,
       players: [],
@@ -106,7 +118,7 @@ export default function Home() {
     return newLobby;
   };
 
-  const handleJoinLobby = (lobbyId: string) => {
+  const handleJoinLobby = async (lobbyId: string) => {
     const lobby = lobbies.find(l => l.id === lobbyId);
     if (lobby && lobby.players.length < lobby.maxPlayers) {
       const updatedLobby = {
@@ -125,7 +137,7 @@ export default function Home() {
         }]
       };
       
-      updateLobby(updatedLobby);
+      await updateLobby(updatedLobby);
       setLobbies(prev => prev.map(l => l.id === lobbyId ? updatedLobby : l));
     }
   };
@@ -135,6 +147,17 @@ export default function Home() {
     matchesInProgress: 3,
     averageWaitTime: '45s'
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white p-4 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400 mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading TUG Lobbies...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white p-4">
