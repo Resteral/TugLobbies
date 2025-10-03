@@ -78,6 +78,33 @@ Player2,1380,22,15,7,68,2024-01-14,2024-01-02
 Player3,1320,20,12,8,60,2024-01-13,2024-01-03`;
   };
 
+  const handleLoadSample = () => {
+    setPasteText(getExampleCSV());
+  };
+
+  const handleImportPastedData = () => {
+    if (pasteText.trim()) {
+      const validationResult = type === 'matches' 
+        ? CSVParser.validateMatchCSV(pasteText)
+        : CSVParser.validatePlayerCSV(pasteText);
+      setValidation(validationResult);
+
+      if (validationResult.isValid) {
+        const parsedData = type === 'matches' 
+          ? CSVParser.parseMatchData(pasteText)
+          : CSVParser.parsePlayerData(pasteText);
+        onImport(parsedData);
+        setPasteText('');
+      }
+    }
+  };
+
+  const handleFileButtonClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
   return (
     <Card className="w-full bg-gradient-to-br from-gray-900 to-gray-800 border-gray-700">
       <CardHeader>
@@ -108,7 +135,7 @@ Player3,1320,20,12,8,60,2024-01-13,2024-01-03`;
             Supported format: .csv with appropriate columns
           </p>
           <Button
-            onClick={() => fileInputRef.current?.click()}
+            onClick={handleFileButtonClick}
             className="bg-blue-600 hover:bg-blue-700"
           >
             <Upload className="w-4 h-4 mr-2" />
@@ -146,7 +173,7 @@ Player1,1450,25,18,7,72,2024-01-15,2024-01-01`}
             </div>
             <div className="flex space-x-2">
               <Button
-                onClick={() => setPasteText(getExampleCSV())}
+                onClick={handleLoadSample}
                 variant="outline"
                 className="bg-transparent border-gray-600 hover:border-gray-400"
                 size="sm"
@@ -154,22 +181,7 @@ Player1,1450,25,18,7,72,2024-01-15,2024-01-01`}
                 Load Sample
               </Button>
               <Button
-                onClick={() => {
-                  if (pasteText.trim()) {
-                    const validationResult = type === 'matches' 
-                      ? CSVParser.validateMatchCSV(pasteText)
-                      : CSVParser.validatePlayerCSV(pasteText);
-                    setValidation(validationResult);
-
-                    if (validationResult.isValid) {
-                      const parsedData = type === 'matches' 
-                        ? CSVParser.parseMatchData(pasteText)
-                        : CSVParser.parsePlayerData(pasteText);
-                      onImport(parsedData);
-                      setPasteText('');
-                    }
-                  }
-                }}
+                onClick={handleImportPastedData}
                 disabled={!pasteText.trim()}
                 className="bg-blue-600 hover:bg-blue-700"
               >

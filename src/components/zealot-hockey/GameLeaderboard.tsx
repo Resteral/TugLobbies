@@ -1,189 +1,306 @@
 /**
- * Per-game leaderboard component
+ * Game Leaderboard Component for Zealot Hockey
+ * Displays recent game results and match history
  */
 
 import React, { useState } from 'react';
-import { Player, GameType } from '../../types/zealot-hockey';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
-import { Trophy, Crown, TrendingUp, TrendingDown, ChevronDown } from 'lucide-react';
 import { Badge } from '../ui/badge';
-import { gameTypes } from '../../data/game-types';
+import { Trophy, Clock, Users, ChevronDown, TrendingUp, Target } from 'lucide-react';
 
-interface GameLeaderboardProps {
-  players: Player[];
+interface GameResult {
+  id: string;
+  date: string;
+  gameType: string;
+  players: {
+    team1: string[];
+    team2: string[];
+  };
+  score: {
+    team1: number;
+    team2: number;
+  };
+  duration: string;
+  winner: 'team1' | 'team2';
 }
 
-export const GameLeaderboard: React.FC<GameLeaderboardProps> = ({ players }) => {
-  const [selectedGame, setSelectedGame] = useState<GameType>(gameTypes[0]);
-  const [showGameSelector, setShowGameSelector] = useState(false);
+export const GameLeaderboard: React.FC = () => {
+  const [selectedGameType, setSelectedGameType] = useState<string>('all');
+  const [selectedTimeRange, setSelectedTimeRange] = useState<string>('24h');
+  const [showGameTypeDropdown, setShowGameTypeDropdown] = useState(false);
+  const [showTimeRangeDropdown, setShowTimeRangeDropdown] = useState(false);
 
-  // Filter players for the selected game and calculate their stats
-  const getPlayersForGame = () => {
-    return players.map(player => {
-      const gameStats = player.gameStats?.[selectedGame.id] || {
-        elo: 1200,
-        matchesPlayed: 0,
-        wins: 0,
-        losses: 0,
-        winRate: 0,
-        lastPlayed: new Date()
-      };
+  const gameTypes = [
+    { value: 'all', label: 'All Games' },
+    { value: '1v1', label: '1v1' },
+    { value: '2v2', label: '2v2' },
+    { value: '3v3', label: '3v3' },
+    { value: '4v4', label: '4v4' }
+  ];
 
-      return {
-        ...player,
-        gameElo: gameStats.elo,
-        gameMatches: gameStats.matchesPlayed,
-        gameWins: gameStats.wins,
-        gameLosses: gameStats.losses,
-        gameWinRate: gameStats.winRate
-      };
-    }).filter(player => player.gameMatches > 0) // Only show players who have played this game
-      .sort((a, b) => b.gameElo - a.gameElo);
+  const timeRanges = [
+    { value: '1h', label: 'Last Hour' },
+    { value: '24h', label: 'Last 24 Hours' },
+    { value: '7d', label: 'Last 7 Days' },
+    { value: '30d', label: 'Last 30 Days' }
+  ];
+
+  const mockGames: GameResult[] = [
+    {
+      id: '1',
+      date: '2024-01-15 14:30',
+      gameType: '1v1',
+      players: {
+        team1: ['ProPlayer1'],
+        team2: ['ZealotMaster']
+      },
+      score: { team1: 3, team2: 2 },
+      duration: '12:45',
+      winner: 'team1'
+    },
+    {
+      id: '2',
+      date: '2024-01-15 13:15',
+      gameType: '2v2',
+      players: {
+        team1: ['HockeyChamp', 'StarCraftPro'],
+        team2: ['RushPlayer', 'MicroMaster']
+      },
+      score: { team1: 5, team2: 1 },
+      duration: '15:20',
+      winner: 'team1'
+    },
+    {
+      id: '3',
+      date: '2024-01-15 12:00',
+      gameType: '1v1',
+      players: {
+        team1: ['BuildOrderPro'],
+        team2: ['ZealotRush']
+      },
+      score: { team1: 2, team2: 4 },
+      duration: '18:30',
+      winner: 'team2'
+    },
+    {
+      id: '4',
+      date: '2024-01-15 11:45',
+      gameType: '3v3',
+      players: {
+        team1: ['TeamPlayer1', 'TeamPlayer2', 'TeamPlayer3'],
+        team2: ['SquadAlpha', 'SquadBeta', 'SquadGamma']
+      },
+      score: { team1: 6, team2: 3 },
+      duration: '22:15',
+      winner: 'team1'
+    }
+  ];
+
+  const handleGameTypeChange = (value: string) => {
+    setSelectedGameType(value);
+    setShowGameTypeDropdown(false);
   };
 
-  const gamePlayers = getPlayersForGame();
-
-  const getRankIcon = (rank: number) => {
-    if (rank === 1) return <Crown className="w-5 h-5 text-yellow-400" />;
-    if (rank === 2) return <Trophy className="w-5 h-5 text-gray-400" />;
-    if (rank === 3) return <Trophy className="w-5 h-5 text-orange-400" />;
-    return null;
+  const handleTimeRangeChange = (value: string) => {
+    setSelectedTimeRange(value);
+    setShowTimeRangeDropdown(false);
   };
 
-  const getEloTrend = (player: any) => {
-    // Mock trend calculation - in real app this would use historical data
-    if (player.gameElo > 1400) return <TrendingUp className="w-4 h-4 text-green-400" />;
-    if (player.gameElo < 1300) return <TrendingDown className="w-4 h-4 text-red-400" />;
-    return null;
+  const getWinnerBadge = (game: GameResult, team: 'team1' | 'team2') => {
+    return game.winner === team ? (
+      <Badge className="bg-gradient-to-r from-green-500 to-emerald-600 ml-2">
+        Winner
+      </Badge>
+    ) : null;
+  };
+
+  const getScoreColor = (game: GameResult, team: 'team1' | 'team2') => {
+    return game.winner === team ? 'text-green-400 font-bold' : 'text-red-400';
   };
 
   return (
-    <Card className="w-full bg-gradient-to-br from-gray-900 to-gray-800 border-gray-700">
-      <CardHeader>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
-          <div className="flex items-center space-x-2">
-            <Trophy className="w-5 h-5 text-yellow-400" />
-            <CardTitle className="text-white">Game Leaderboards</CardTitle>
+    <Card className="bg-gradient-to-br from-blue-900/50 to-cyan-900/50 border-blue-700 backdrop-blur-sm">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-white flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-lg">
+              <Trophy className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <div>Recent Games</div>
+              <CardDescription className="text-blue-200">
+                Latest match results and statistics
+              </CardDescription>
+            </div>
           </div>
           
-          {/* Game Selector */}
-          <div className="relative">
-            <Button
-              onClick={() => setShowGameSelector(!showGameSelector)}
-              variant="outline"
-              className="bg-transparent border-gray-600 hover:border-blue-500 min-w-[200px] justify-between"
-              size="sm"
-            >
-              <div className="flex items-center space-x-2">
-                <span>{selectedGame.icon}</span>
-                <span>{selectedGame.name}</span>
-              </div>
-              <ChevronDown className="w-4 h-4" />
-            </Button>
-            
-            {showGameSelector && (
-              <div className="absolute top-full right-0 mt-1 bg-gray-800 border border-gray-600 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
-                {gameTypes.map(game => (
-                  <button
-                    key={game.id}
-                    onClick={() => {
-                      setSelectedGame(game);
-                      setShowGameSelector(false);
-                    }}
-                    className="w-full p-3 text-left hover:bg-gray-700 border-b border-gray-700 last:border-b-0 flex items-center space-x-3"
-                  >
-                    <span className="text-lg">{game.icon}</span>
-                    <div className="flex-1">
-                      <div className="text-white font-medium">{game.name}</div>
-                      <div className="text-gray-400 text-sm">{game.description}</div>
+          <div className="flex items-center space-x-2">
+            {/* Game Type Filter */}
+            <div className="relative">
+              <Button
+                variant="outline"
+                className="bg-transparent border-blue-600 text-blue-300 hover:bg-blue-700"
+                onClick={() => setShowGameTypeDropdown(!showGameTypeDropdown)}
+              >
+                {gameTypes.find(type => type.value === selectedGameType)?.label}
+                <ChevronDown className="w-4 h-4 ml-2" />
+              </Button>
+              
+              {showGameTypeDropdown && (
+                <div className="absolute top-full right-0 mt-2 w-48 bg-blue-800 border border-blue-600 rounded-lg shadow-lg z-20">
+                  {gameTypes.map((type) => (
+                    <div
+                      key={type.value}
+                      className="px-4 py-2 hover:bg-blue-700 cursor-pointer text-blue-300"
+                      onClick={() => {
+                        handleGameTypeChange(type.value);
+                        setShowGameTypeDropdown(false);
+                      }}
+                    >
+                      {type.label}
                     </div>
-                  </button>
-                ))}
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Time Range Filter */}
+            <div className="relative">
+              <Button
+                variant="outline"
+                className="bg-transparent border-cyan-600 text-cyan-300 hover:bg-cyan-700"
+                onClick={() => setShowTimeRangeDropdown(!showTimeRangeDropdown)}
+              >
+                {timeRanges.find(range => range.value === selectedTimeRange)?.label}
+                <ChevronDown className="w-4 h-4 ml-2" />
+              </Button>
+              
+              {showTimeRangeDropdown && (
+                <div className="absolute top-full right-0 mt-2 w-48 bg-cyan-800 border border-cyan-600 rounded-lg shadow-lg z-10">
+                  {timeRanges.map((range) => (
+                    <div
+                      key={range.value}
+                      className="px-4 py-2 hover:bg-cyan-700 cursor-pointer text-cyan-300"
+                      onClick={() => {
+                        handleTimeRangeChange(range.value);
+                        setShowTimeRangeDropdown(false);
+                      }}
+                    >
+                      {range.label}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </CardTitle>
+      </CardHeader>
+      
+      <CardContent className="space-y-4">
+        {/* Games List */}
+        <div className="space-y-3">
+          {mockGames.map((game) => (
+            <div
+              key={game.id}
+              className="p-4 rounded-lg bg-blue-800/30 border border-blue-700/50 hover:bg-blue-700/30 transition-colors"
+            >
+              {/* Game Header */}
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-3">
+                  <Badge variant="outline" className="bg-transparent border-blue-600 text-blue-300">
+                    {game.gameType}
+                  </Badge>
+                  <div className="text-blue-300 text-sm">{game.date}</div>
+                </div>
+                <div className="flex items-center space-x-2 text-blue-300 text-sm">
+                  <Clock className="w-4 h-4" />
+                  <span>{game.duration}</span>
+                </div>
               </div>
-            )}
+
+              {/* Teams and Score */}
+              <div className="grid grid-cols-2 gap-6">
+                {/* Team 1 */}
+                <div className="text-center">
+                  <div className="flex items-center justify-center space-x-2 mb-2">
+                    <Users className="w-4 h-4 text-blue-300" />
+                    <div className="text-white font-semibold">
+                      Team 1
+                    </div>
+                    {getWinnerBadge(game, 'team1')}
+                  </div>
+                  <div className="space-y-1">
+                    {game.players.team1.map((player, index) => (
+                      <div key={index} className="text-blue-200 text-sm">
+                        {player}
+                      </div>
+                    ))}
+                  </div>
+                  <div className={`text-2xl font-bold mt-2 ${getScoreColor(game, 'team1')}`}>
+                    {game.score.team1}
+                  </div>
+                </div>
+
+                {/* VS Separator */}
+                <div className="flex items-center justify-center">
+                  <div className="text-blue-400 font-bold text-lg">VS</div>
+                </div>
+
+                {/* Team 2 */}
+                <div className="text-center">
+                  <div className="flex items-center justify-center space-x-2 mb-2">
+                    <Users className="w-4 h-4 text-blue-300" />
+                    <div className="text-white font-semibold">
+                      Team 2
+                    </div>
+                    {getWinnerBadge(game, 'team2')}
+                  </div>
+                  <div className="space-y-1">
+                    {game.players.team2.map((player, index) => (
+                      <div key={index} className="text-blue-200 text-sm">
+                        {player}
+                      </div>
+                    ))}
+                  </div>
+                  <div className={`text-2xl font-bold mt-2 ${getScoreColor(game, 'team2')}`}>
+                    {game.score.team2}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Statistics Summary */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t border-blue-700/50">
+          <div className="text-center p-3 bg-blue-800/30 rounded-lg">
+            <Target className="w-6 h-6 text-blue-400 mx-auto mb-2" />
+            <div className="text-white font-bold text-lg">{mockGames.length}</div>
+            <div className="text-blue-300 text-sm">Total Games</div>
+          </div>
+          <div className="text-center p-3 bg-blue-800/30 rounded-lg">
+            <TrendingUp className="w-6 h-6 text-green-400 mx-auto mb-2" />
+            <div className="text-white font-bold text-lg">
+              {Math.round(mockGames.reduce((acc, game) => acc + parseInt(game.duration.split(':')[0]), 0) / mockGames.length)}m
+            </div>
+            <div className="text-blue-300 text-sm">Avg Duration</div>
+          </div>
+          <div className="text-center p-3 bg-blue-800/30 rounded-lg">
+            <Trophy className="w-6 h-6 text-amber-400 mx-auto mb-2" />
+            <div className="text-white font-bold text-lg">
+              {mockGames.filter(game => game.winner === 'team1').length}
+            </div>
+            <div className="text-blue-300 text-sm">Team 1 Wins</div>
+          </div>
+          <div className="text-center p-3 bg-blue-800/30 rounded-lg">
+            <Users className="w-6 h-6 text-purple-400 mx-auto mb-2" />
+            <div className="text-white font-bold text-lg">
+              {mockGames.reduce((acc, game) => acc + game.players.team1.length + game.players.team2.length, 0)}
+            </div>
+            <div className="text-blue-300 text-sm">Total Players</div>
           </div>
         </div>
-        <CardDescription className="text-gray-400">
-          {gamePlayers.length} players ranked in {selectedGame.name}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {gamePlayers.length === 0 ? (
-          <div className="text-center text-gray-400 py-8">
-            <Trophy className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>No players have played {selectedGame.name} yet</p>
-            <p className="text-sm mt-2">Be the first to start a match!</p>
-          </div>
-        ) : (
-          <div className="space-y-3 max-h-96 overflow-y-auto">
-            {gamePlayers.map((player, index) => (
-              <div
-                key={player.id}
-                className={`flex items-center justify-between p-4 rounded-lg border transition-all ${
-                  index < 3 
-                    ? 'bg-gradient-to-r from-blue-900/30 to-purple-900/30 border-blue-500/50' 
-                    : 'bg-gray-800/50 border-gray-600 hover:border-gray-500'
-                }`}
-              >
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    {getRankIcon(index + 1)}
-                    <span className={`font-bold ${
-                      index === 0 ? 'text-yellow-400' :
-                      index === 1 ? 'text-gray-300' :
-                      index === 2 ? 'text-orange-400' : 'text-white'
-                    }`}>
-                      #{index + 1}
-                    </span>
-                  </div>
-                  <div>
-                    <div className="font-semibold text-white">{player.name}</div>
-                    <div className="text-sm text-gray-400">
-                      {player.gameWins}W - {player.gameLosses}L ({(player.gameWinRate).toFixed(1)}%)
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-4">
-                  <div className="text-right">
-                    <div className="flex items-center space-x-1 justify-end">
-                      {getEloTrend(player)}
-                      <span className="font-bold text-blue-400">{player.gameElo}</span>
-                    </div>
-                    <div className="text-sm text-gray-400">ELO</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-semibold text-white">{player.gameMatches}</div>
-                    <div className="text-sm text-gray-400">Matches</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-        
-        {/* Quick Stats */}
-        {gamePlayers.length > 0 && (
-          <div className="mt-4 grid grid-cols-3 gap-4 pt-4 border-t border-gray-700">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-white">{gamePlayers[0]?.gameElo || 0}</div>
-              <div className="text-sm text-gray-400">Top ELO</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-white">
-                {gamePlayers.reduce((total, player) => total + player.gameMatches, 0)}
-              </div>
-              <div className="text-sm text-gray-400">Total Matches</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-white">
-                {(gamePlayers.reduce((total, player) => total + player.gameWinRate, 0) / gamePlayers.length).toFixed(1)}%
-              </div>
-              <div className="text-sm text-gray-400">Avg Win Rate</div>
-            </div>
-          </div>
-        )}
       </CardContent>
     </Card>
   );

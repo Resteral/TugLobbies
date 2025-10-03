@@ -1,197 +1,179 @@
 /**
- * Player login component for account ID authentication and stat mapping
+ * Player Login Component
+ * Handles player authentication with account ID generation
  */
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Player } from '../../types/zealot-hockey';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
-import { HockeyPlayerStats } from '../../types/hockey-stats';
-import { LogIn, User, BarChart3, Trophy, Target, Shield } from 'lucide-react';
+import { User, Key, LogIn, UserPlus, X } from 'lucide-react';
 
 interface PlayerLoginProps {
-  hockeyStats: HockeyPlayerStats[];
-  onLogin: (playerStats: HockeyPlayerStats) => void;
-  onLogout: () => void;
+  onLogin: (player: Player) => void;
+  onCancel?: () => void;
 }
 
-export const PlayerLogin: React.FC<PlayerLoginProps> = ({ 
-  hockeyStats, 
-  onLogin, 
-  onLogout 
-}) => {
+/**
+ * Player Login Component
+ * Provides authentication interface for players with account ID generation
+ */
+export function PlayerLogin({ onLogin, onCancel }: PlayerLoginProps) {
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [playerName, setPlayerName] = useState('');
   const [accountId, setAccountId] = useState('');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentPlayer, setCurrentPlayer] = useState<HockeyPlayerStats | null>(null);
-  const [error, setError] = useState('');
 
-  const handleLogin = () => {
-    if (!accountId.trim()) {
-      setError('Please enter your account ID');
+  /**
+   * Generate a new account ID in 1-S2-1-XXXXXX format
+   */
+  const generateAccountId = (): string => {
+    const uniqueId = 100000 + Math.floor(Math.random() * 900000);
+    return `1-S2-1-${uniqueId}`;
+  };
+
+  /**
+   * Handle player login/signup
+   */
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!playerName.trim()) {
+      alert('Please enter your player name');
       return;
     }
 
-    const player = hockeyStats.find(stat => 
-      stat.accountId.toLowerCase() === accountId.toLowerCase().trim()
-    );
+    const finalAccountId = isSignUp ? generateAccountId() : (accountId || generateAccountId());
 
-    if (player) {
-      setCurrentPlayer(player);
-      setIsLoggedIn(true);
-      setError('');
-      onLogin(player);
-    } else {
-      setError('Account ID not found in current stats data');
-    }
-  };
-
-  const handleLogout = () => {
-    setAccountId('');
-    setCurrentPlayer(null);
-    setIsLoggedIn(false);
-    setError('');
-    onLogout();
-  };
-
-  const getPlayerStatsSummary = (player: HockeyPlayerStats) => {
-    return {
-      games: hockeyStats.filter(stat => stat.accountId === player.accountId).length,
-      totalGoals: hockeyStats
-        .filter(stat => stat.accountId === player.accountId)
-        .reduce((sum, stat) => sum + stat.goals, 0),
-      totalAssists: hockeyStats
-        .filter(stat => stat.accountId === player.accountId)
-        .reduce((sum, stat) => sum + stat.assists, 0),
-      totalPoints: hockeyStats
-        .filter(stat => stat.accountId === player.accountId)
-        .reduce((sum, stat) => sum + (stat.points || 0), 0),
-      shootingPercentage: player.shootingPercentage || 0
+    const player: Player = {
+      id: `player-${Date.now()}`,
+      accountId: finalAccountId,
+      name: playerName.trim(),
+      elo: 1200,
+      matchesPlayed: 0,
+      wins: 0,
+      losses: 0,
+      winRate: 0,
+      lastPlayed: new Date(),
+      joinDate: new Date(),
+      gameStats: {}
     };
+
+    onLogin(player);
   };
-
-  if (isLoggedIn && currentPlayer) {
-    const stats = getPlayerStatsSummary(currentPlayer);
-    
-    return (
-      <Card className="bg-gradient-to-br from-green-900/50 to-green-800/30 border-green-600">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <User className="w-5 h-5 text-green-400" />
-              <span>Welcome, {currentPlayer.handle}</span>
-            </div>
-            <Badge variant="default" className="bg-green-600">
-              Logged In
-            </Badge>
-          </CardTitle>
-          <CardDescription className="text-green-300">
-            Account ID: {currentPlayer.accountId} • Team: {currentPlayer.team}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Quick Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="text-center p-3 bg-green-800/30 rounded">
-              <div className="text-green-400 font-bold text-lg">{stats.games}</div>
-              <div className="text-green-300 text-sm">Games</div>
-            </div>
-            <div className="text-center p-3 bg-green-800/30 rounded">
-              <div className="text-green-400 font-bold text-lg">{stats.totalGoals}</div>
-              <div className="text-green-300 text-sm">Goals</div>
-            </div>
-            <div className="text-center p-3 bg-green-800/30 rounded">
-              <div className="text-green-400 font-bold text-lg">{stats.totalAssists}</div>
-              <div className="text-green-300 text-sm">Assists</div>
-            </div>
-            <div className="text-center p-3 bg-green-800/30 rounded">
-              <div className="text-green-400 font-bold text-lg">{stats.totalPoints}</div>
-              <div className="text-green-300 text-sm">Points</div>
-            </div>
-          </div>
-
-          <div className="flex space-x-2">
-            <Button 
-              onClick={() => window.location.href = `#player-stats-${currentPlayer.accountId}`}
-              className="flex-1 bg-blue-600 hover:bg-blue-700"
-            >
-              <BarChart3 className="w-4 h-4 mr-2" />
-              View My Stats
-            </Button>
-            <Button 
-              onClick={handleLogout}
-              variant="outline"
-              className="bg-transparent border-red-600 text-red-400 hover:bg-red-600 hover:text-white"
-            >
-              <LogIn className="w-4 h-4 mr-2" />
-              Logout
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
-    <Card className="bg-gradient-to-br from-gray-900 to-gray-800 border-gray-700">
-      <CardHeader>
+    <Card className="w-full max-w-md bg-slate-800 border-purple-500/30">
+      <CardHeader className="relative">
         <CardTitle className="text-white flex items-center space-x-2">
-          <LogIn className="w-5 h-5 text-blue-400" />
-          <span>Player Login</span>
+          <User className="w-5 h-5 text-purple-400" />
+          <span>{isSignUp ? 'Create Account' : 'Player Login'}</span>
         </CardTitle>
-        <CardDescription className="text-gray-400">
-          Enter your account ID to view your personal statistics and performance dashboard
+        <CardDescription className="text-purple-200">
+          {isSignUp ? 'Create your hockey player account' : 'Sign in to access your stats'}
         </CardDescription>
+        {onCancel && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-4 right-4 h-6 w-6 bg-transparent text-purple-300 hover:text-white"
+            onClick={onCancel}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <label htmlFor="accountId" className="text-sm font-medium text-white">
-            Account ID
-          </label>
-          <Input
-            id="accountId"
-            type="text"
-            placeholder="e.g., 1-S2-1-6820063"
-            value={accountId}
-            onChange={(e) => setAccountId(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
-            className="bg-gray-800 border-gray-600 text-white placeholder-gray-400"
-          />
-          {error && (
-            <div className="text-red-400 text-sm flex items-center space-x-1">
-              <span>⚠️</span>
-              <span>{error}</span>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Player Name Input */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-purple-300 flex items-center">
+              <User className="w-4 h-4 mr-2" />
+              Player Name
+            </label>
+            <Input
+              placeholder="Enter your player name"
+              value={playerName}
+              onChange={(e) => setPlayerName(e.target.value)}
+              className="bg-slate-700/50 border-purple-500/30 text-white placeholder-purple-300"
+              required
+            />
+          </div>
+
+          {/* Account ID Input (for login) */}
+          {!isSignUp && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-purple-300 flex items-center">
+                <Key className="w-4 h-4 mr-2" />
+                Account ID (Optional)
+              </label>
+              <Input
+                placeholder="1-S2-1-XXXXXX (leave blank for new account)"
+                value={accountId}
+                onChange={(e) => setAccountId(e.target.value)}
+                className="bg-slate-700/50 border-purple-500/30 text-white placeholder-purple-300 font-mono text-sm"
+              />
+              <p className="text-xs text-purple-400">
+                Leave blank to generate a new account ID automatically
+              </p>
             </div>
           )}
-        </div>
 
-        <Button 
-          onClick={handleLogin}
-          disabled={!accountId.trim()}
-          className="w-full bg-blue-600 hover:bg-blue-700"
-        >
-          <LogIn className="w-4 h-4 mr-2" />
-          Login to View Stats
-        </Button>
-
-        {hockeyStats.length > 0 && (
-          <div className="text-sm text-gray-400">
-            <p>Available account IDs in current data:</p>
-            <div className="mt-2 max-h-20 overflow-y-auto bg-gray-900 rounded p-2">
-              {[...new Set(hockeyStats.map(stat => stat.accountId))].slice(0, 10).map(id => (
-                <div key={id} className="text-xs font-mono text-gray-300">
-                  {id}
+          {/* Account ID Preview (for signup) */}
+          {isSignUp && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-purple-300">
+                Your Account ID
+              </label>
+              <div className="bg-slate-700/50 border border-purple-500/30 rounded-md p-3">
+                <div className="font-mono text-blue-400 text-sm text-center">
+                  {generateAccountId()}
                 </div>
-              ))}
-              {[...new Set(hockeyStats.map(stat => stat.accountId))].length > 10 && (
-                <div className="text-xs text-gray-500 mt-1">
-                  ... and {[...new Set(hockeyStats.map(stat => stat.accountId))].length - 10} more
-                </div>
-              )}
+                <p className="text-xs text-purple-400 mt-1 text-center">
+                  This will be your permanent player identifier
+                </p>
+              </div>
             </div>
+          )}
+
+          {/* Submit Button */}
+          <Button
+            type="submit"
+            className="w-full bg-purple-600 hover:bg-purple-700"
+          >
+            {isSignUp ? (
+              <>
+                <UserPlus className="w-4 h-4 mr-2" />
+                Create Account
+              </>
+            ) : (
+              <>
+                <LogIn className="w-4 h-4 mr-2" />
+                Sign In
+              </>
+            )}
+          </Button>
+
+          {/* Toggle between login/signup */}
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={() => setIsSignUp(!isSignUp)}
+              className="text-purple-400 hover:text-purple-300 text-sm underline"
+            >
+              {isSignUp ? 'Already have an account? Sign in' : 'Need an account? Sign up'}
+            </button>
           </div>
-        )}
+
+          {/* Info Badge */}
+          <div className="flex justify-center">
+            <Badge variant="outline" className="bg-transparent border-blue-500 text-blue-400">
+              Account ID Format: 1-S2-1-XXXXXX
+            </Badge>
+          </div>
+        </form>
       </CardContent>
     </Card>
   );
-};
+}
