@@ -1,6 +1,5 @@
 /**
- * Vite configuration for TUG Lobbies
- * Alternative build system that handles CommonJS modules better
+ * Vite configuration for Discord SDK integration
  */
 
 import { defineConfig } from 'vite'
@@ -14,18 +13,17 @@ export default defineConfig({
   },
   build: {
     target: 'es2020',
-    minify: 'esbuild',
-    sourcemap: true
-  },
-  resolve: {
-    alias: {
-      '@': '/src'
+    rollupOptions: {
+      external: [], // Add any external dependencies if needed
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          discord: [] // Discord SDK would go here when installed
+        }
+      }
     }
   },
-  define: {
-    'process.env': {}
-  },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router']
+    include: [] // Add Discord SDK when available
   }
 })
