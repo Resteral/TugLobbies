@@ -3,47 +3,229 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TUG Lobbies - StarCraft II Matchmaking Platform</title>
-    <meta name="description" content="Advanced matchmaking and lobby system for StarCraft II with Discord integration">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎮</text></svg>">
+    <title>TUG Lobbies - Tournament Management</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/react-router@7/dist/umd/react-router.development.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background: #0f0f23;
-            color: white;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
-        #loading {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
-        }
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid rgba(255,255,255,0.3);
-            border-top: 4px solid #3b82f6;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        /* Custom styles for Discord integration */
+        .discord-connected { border-left: 4px solid #10b981; }
+        .discord-disconnected { border-left: 4px solid #ef4444; }
+        .tournament-card { 
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(88, 28, 135, 0.4));
+            backdrop-filter: blur(10px);
         }
     </style>
 </head>
-<body>
-    <div id="root">
-        <div id="loading">
-            <div class="spinner"></div>
-            <div>Loading TUG Lobbies...</div>
-        </div>
-    </div>
-    <script type="module" src="/src/main.tsx"></script>
+<body class="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 min-h-screen">
+    <div id="root" class="min-h-screen"></div>
+    
+    <script type="text/babel">
+        // Simple React app for development
+        const { useState, useEffect } = React;
+        const { HashRouter, Routes, Route } = ReactRouter;
+        
+        // Mock Discord Activity Hook
+        const useDiscordActivity = () => {
+            const [isConnected, setIsConnected] = useState(true);
+            const [activityStatus, setActivityStatus] = useState('Discord Activity Ready!');
+            
+            const updateTournamentActivity = (data) => {
+                console.log('Discord Activity Update:', data);
+                setActivityStatus(`Tournament: ${data.tournamentName} - ${data.status}`);
+                return true;
+            };
+            
+            const updateDraftActivity = (tournamentName, draftType, currentPick, totalPicks) => {
+                console.log('Draft Activity:', { tournamentName, draftType, currentPick, totalPicks });
+                setActivityStatus(`Drafting: ${tournamentName} - Pick ${currentPick}/${totalPicks}`);
+                return true;
+            };
+            
+            const updateLiveTournamentActivity = (tournamentName, currentRound, totalRounds, playerCount) => {
+                console.log('Live Tournament Activity:', { tournamentName, currentRound, totalRounds, playerCount });
+                setActivityStatus(`Live: ${tournamentName} - Round ${currentRound}/${totalRounds}`);
+                return true;
+            };
+            
+            const clearActivity = () => {
+                setActivityStatus('Activity cleared');
+                return true;
+            };
+            
+            return {
+                isConnected,
+                activityStatus,
+                updateTournamentActivity,
+                updateDraftActivity,
+                updateLiveTournamentActivity,
+                clearActivity
+            };
+        };
+        
+        // Mock Tournament Manager Component
+        const TournamentManager = ({ tournament, onUpdate, onDelete }) => {
+            const [showDraftRoom, setShowDraftRoom] = useState(false);
+            const [players, setPlayers] = useState(tournament.players || []);
+            
+            const discordActivity = useDiscordActivity();
+            
+            const startTournament = () => {
+                const updatedTournament = { ...tournament, status: 'live' };
+                onUpdate(updatedTournament);
+                
+                if (discordActivity.isConnected) {
+                    discordActivity.updateLiveTournamentActivity(
+                        tournament.name,
+                        1,
+                        tournament.leagueSettings?.totalRounds || 5,
+                        players.length
+                    );
+                }
+            };
+            
+            const startDraft = () => {
+                setShowDraftRoom(true);
+                if (discordActivity.isConnected) {
+                    discordActivity.updateDraftActivity(
+                        tournament.name, 
+                        tournament.draftType, 
+                        1, 
+                        tournament.leagueSettings?.rosterSize || 8
+                    );
+                }
+            };
+            
+            return React.createElement('div', { className: 'space-y-6 p-6' },
+                // Tournament Header
+                React.createElement('div', { 
+                    className: 'tournament-card border border-purple-500/20 rounded-lg p-6 text-white' 
+                },
+                    React.createElement('div', { className: 'flex justify-between items-center' },
+                        React.createElement('div', null,
+                            React.createElement('h2', { className: 'text-2xl font-bold' }, tournament.name),
+                            React.createElement('div', { className: 'flex space-x-2 mt-2' },
+                                React.createElement('span', { 
+                                    className: `px-3 py-1 rounded-full text-sm ${
+                                        tournament.status === 'registration' ? 'bg-blue-600' :
+                                        tournament.status === 'live' ? 'bg-green-600' :
+                                        tournament.status === 'completed' ? 'bg-purple-600' : 'bg-gray-600'
+                                    }`
+                                }, tournament.status.toUpperCase()),
+                                React.createElement('span', { 
+                                    className: 'px-3 py-1 rounded-full text-sm border border-purple-500 text-purple-300' 
+                                }, `${tournament.draftType} Draft`)
+                            )
+                        ),
+                        React.createElement('div', { className: 'flex space-x-2' },
+                            React.createElement('button', {
+                                onClick: startDraft,
+                                className: 'bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg flex items-center'
+                            },
+                                '▶ Start Draft'
+                            ),
+                            React.createElement('button', {
+                                onClick: startTournament,
+                                disabled: tournament.status === 'live',
+                                className: 'bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg disabled:opacity-50'
+                            },
+                                'Start Tournament'
+                            )
+                        )
+                    ),
+                    React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-5 gap-4 mt-4 text-sm' },
+                        React.createElement('div', { className: 'flex items-center space-x-2' },
+                            React.createElement('span', { className: 'text-purple-300' }, 'Players:'),
+                            React.createElement('span', { className: 'text-white' }, `${players.length}/${tournament.maxPlayers}`)
+                        ),
+                        React.createElement('div', { className: 'flex items-center space-x-2' },
+                            React.createElement('span', { className: 'text-purple-300' }, 'Discord:'),
+                            React.createElement('span', { 
+                                className: `px-2 py-1 rounded text-xs ${
+                                    discordActivity.isConnected ? 'bg-green-600' : 'bg-gray-600'
+                                }`
+                            }, discordActivity.isConnected ? 'Connected' : 'Offline')
+                        ),
+                        React.createElement('div', { className: 'flex items-center space-x-2' },
+                            React.createElement('span', { className: 'text-purple-300' }, 'Prize Pool:'),
+                            React.createElement('span', { className: 'text-yellow-400' }, `$${tournament.prizePool}`)
+                        )
+                    ),
+                    discordActivity.activityStatus && React.createElement('div', { 
+                        className: 'mt-3 text-xs text-purple-300' 
+                    }, `Discord Activity: ${discordActivity.activityStatus}`)
+                ),
+                
+                // Draft Room (simplified)
+                showDraftRoom && React.createElement('div', { 
+                    className: 'tournament-card border border-blue-500/20 rounded-lg p-6 text-white' 
+                },
+                    React.createElement('h3', { className: 'text-xl font-bold mb-4' }, 'Draft Room'),
+                    React.createElement('p', { className: 'text-purple-300' }, 
+                        'Draft in progress... Players are being selected.'
+                    ),
+                    React.createElement('button', {
+                        onClick: () => setShowDraftRoom(false),
+                        className: 'mt-4 bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg'
+                    }, 'Close Draft')
+                )
+            );
+        };
+        
+        // Home Page Component
+        const Home = () => {
+            const [tournaments, setTournaments] = useState([
+                {
+                    id: '1',
+                    name: 'Zealot Hockey Championship',
+                    status: 'registration',
+                    draftType: 'Auction',
+                    maxPlayers: 16,
+                    players: [],
+                    prizePool: 1000,
+                    leagueSettings: { totalRounds: 5, rosterSize: 8 }
+                }
+            ]);
+            
+            const updateTournament = (updatedTournament) => {
+                setTournaments(prev => prev.map(t => 
+                    t.id === updatedTournament.id ? updatedTournament : t
+                ));
+            };
+            
+            return React.createElement('div', { className: 'min-h-screen p-8' },
+                React.createElement('h1', { className: 'text-4xl font-bold text-white text-center mb-8' }, 
+                    'TUG Lobbies - Discord SDK Integration'
+                ),
+                React.createElement('p', { className: 'text-purple-300 text-center mb-12' },
+                    'Tournament management with real-time Discord activity updates'
+                ),
+                
+                tournaments.map(tournament => 
+                    React.createElement(TournamentManager, {
+                        key: tournament.id,
+                        tournament: tournament,
+                        onUpdate: updateTournament,
+                        onDelete: (id) => setTournaments(prev => prev.filter(t => t.id !== id))
+                    })
+                )
+            );
+        };
+        
+        // App Component
+        const App = () => {
+            return React.createElement(HashRouter, null,
+                React.createElement(Routes, null,
+                    React.createElement(Route, { path: '/', element: React.createElement(Home) })
+                )
+            );
+        };
+        
+        // Render the app
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(App));
+    </script>
 </body>
 </html>

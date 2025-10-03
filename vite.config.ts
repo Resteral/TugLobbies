@@ -1,31 +1,35 @@
 /**
- * Vite configuration for TUG Lobbies
- * Alternative build system that handles CommonJS modules better
+ * Vite configuration for React 18 with Fast Refresh
+ * - Adds @vitejs/plugin-react for dev experience and JSX transforms.
+ * - Keeps minimal Rollup config and dependency optimization.
  */
-
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    /**
+     * React plugin:
+     * - Enables Fast Refresh (HMR) in development.
+     * - Handles JSX transform and automatic JSX runtime.
+     */
+    react(),
+  ],
   server: {
     port: 3000,
-    host: true
+    host: true,
   },
   build: {
     target: 'es2020',
-    minify: 'esbuild',
-    sourcemap: true
-  },
-  resolve: {
-    alias: {
-      '@': '/src'
-    }
-  },
-  define: {
-    'process.env': {}
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+        },
+      },
+    },
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router']
-  }
-})
+    include: ['react', 'react-dom'],
+  },
+});
