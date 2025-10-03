@@ -9,12 +9,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Trophy, Users, BarChart3, Gamepad2, Settings, LogOut } from 'lucide-react';
+import BettingMarket from '../components/betting/BettingMarket';
+import BettingCSVConnector from '../components/betting/BettingCSVConnector';
+import MatchmakingQueue from '../components/MatchmakingQueue';
 import { HockeyStatsDashboard } from '../components/zealot-hockey/HockeyStatsDashboard';
 import { HockeyStatsSpreadsheet } from '../components/zealot-hockey/HockeyStatsSpreadsheet';
 import { Leaderboard } from '../components/zealot-hockey/Leaderboard';
 import { PlayerLogin } from '../components/zealot-hockey/PlayerLogin';
 import { playerManagement } from '../services/player-management';
 import { Player } from '../types/zealot-hockey';
+import ResultsWebhookConsole from '../components/webhook/ResultsWebhookConsole';
+import { GlobalEloLeaderboard } from '../components/leaderboards/GlobalEloLeaderboard';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -91,6 +96,7 @@ export default function Dashboard() {
       assists: 12,
       points: 30,
       rating: 8.5,
+      elo: 1450,
       plusMinus: 15,
       timeOnIce: 1250,
       shots: 45,
@@ -107,6 +113,7 @@ export default function Dashboard() {
       assists: 10,
       points: 25,
       rating: 7.8,
+      elo: 1380,
       plusMinus: 12,
       timeOnIce: 1100,
       shots: 38,
@@ -123,6 +130,7 @@ export default function Dashboard() {
       assists: 15,
       points: 35,
       rating: 9.2,
+      elo: 1420,
       plusMinus: 18,
       timeOnIce: 1500,
       shots: 52,
@@ -263,9 +271,9 @@ export default function Dashboard() {
             <Card className="bg-slate-800/30 border-purple-500/20">
               <CardHeader>
                 <CardTitle className="text-white">Quick Actions</CardTitle>
-                <CardDescription className="text-purple-200">
+                <p className="text-purple-200">
                   Get started with matchmaking and tournaments
-                </CardDescription>
+                </p>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 gap-3">
@@ -295,6 +303,19 @@ export default function Dashboard() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Matchmaking visible */}
+            <MatchmakingQueue />
+
+            {/* Betting & CSV Settlement */}
+            <BettingMarket />
+            <BettingCSVConnector />
+
+            {/* Webhook Console (CSV) */}
+            <ResultsWebhookConsole />
+
+            {/* Global ELO Leaderboard from applied webhook results */}
+            <GlobalEloLeaderboard />
           </div>
         </div>
       </div>

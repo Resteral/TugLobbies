@@ -1,131 +1,191 @@
 /**
- * Home page component
- * Main landing page for TUG Lobbies
+ * Home page
+ * Provides a welcoming hero, key entrances, and a Discord SDK preview for quick verification.
  */
 
 import React from 'react';
-import { useNavigate } from 'react-router';
+import { Link } from 'react-router';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { Trophy, Users, Gamepad2, BarChart3, MessageCircle } from 'lucide-react';
+import { Badge } from '../components/ui/badge';
+import { Trophy, Swords, Gamepad2, LayoutDashboard, MessageSquare, Calendar, Rocket } from 'lucide-react';
+import DiscordActivitySDK from '../components/DiscordActivitySDK';
 
-export default function Home() {
-  const navigate = useNavigate();
-
-  const features = [
-    {
-      icon: Trophy,
-      title: 'Tournaments',
-      description: 'Compete in organized tournaments with prize pools',
-      color: 'from-yellow-500 to-orange-500',
-      onClick: () => navigate('/tournaments')
-    },
-    {
-      icon: Users,
-      title: 'Matchmaking',
-      description: 'Find opponents with similar skill levels',
-      color: 'from-blue-500 to-cyan-500',
-      onClick: () => navigate('/dashboard')
-    },
-    {
-      icon: Gamepad2,
-      title: 'Lobby System',
-      description: 'Create and join custom game lobbies',
-      color: 'from-green-500 to-emerald-500',
-      onClick: () => navigate('/dashboard')
-    },
-    {
-      icon: BarChart3,
-      title: 'Statistics',
-      description: 'Track your performance and rankings',
-      color: 'from-purple-500 to-pink-500',
-      onClick: () => navigate('/dashboard')
-    },
-    {
-      icon: MessageCircle,
-      title: 'Discord Integration',
-      description: 'Connect with Discord for rich presence',
-      color: 'from-indigo-500 to-purple-500',
-      onClick: () => navigate('/dashboard')
-    }
-  ];
-
+/**
+ * Simple feature card for Home quick links.
+ */
+function FeatureCard(props: {
+  to: string;
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  badge?: string;
+}) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
-      {/* Hero Section */}
-      <div className="container mx-auto px-4 py-16 text-center">
-        <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-          TUG Lobbies
-        </h1>
-        <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-          Advanced matchmaking and tournament platform for StarCraft II and Zealot Hockey
-        </p>
-        
-        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-          <Button 
-            onClick={() => navigate('/dashboard')}
-            className="bg-blue-600 hover:bg-blue-700 px-8 py-3 text-lg"
-          >
-            Get Started
-          </Button>
-          <Button 
-            onClick={() => navigate('/tournaments')}
-            variant="outline"
-            className="bg-transparent border-purple-600 text-purple-300 hover:bg-purple-600 hover:text-white px-8 py-3 text-lg"
-          >
-            View Tournaments
-          </Button>
+    <Link to={props.to} className="block group">
+      <Card className="h-full transition-colors bg-slate-900/40 border-slate-700/60 group-hover:border-purple-500/60">
+        <CardHeader className="space-y-3">
+          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-600 to-indigo-600 text-white flex items-center justify-center">
+            {props.icon}
+          </div>
+          <CardTitle className="text-white">{props.title}</CardTitle>
+          <CardDescription className="text-slate-300">{props.description}</CardDescription>
+          {props.badge && <Badge className="bg-purple-600/70">{props.badge}</Badge>}
+        </CardHeader>
+      </Card>
+    </Link>
+  );
+}
+
+/**
+ * Home component with hero, actions, and quick entrances.
+ */
+export default function Home() {
+  return (
+    <div className="min-h-screen">
+      {/* Hero Section with Hockey Imagery */}
+      <section className="relative">
+        <div className="absolute inset-0 opacity-25">
+          <img src="https://pub-cdn.sider.ai/u/U005HEVRO98/web-coder/68da03bcb54d8be52a93b613/resource/f50665ab-8c5f-47a2-96c4-230727291c56.jpg" className="object-cover w-full h-full" />
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-900/90 via-purple-900/70 to-slate-900" />
+        <div className="relative max-w-6xl mx-auto px-6 pt-20 pb-12">
+          <div className="inline-flex items-center mb-5 rounded-full border border-purple-700/40 bg-purple-900/30 px-3 py-1 text-sm text-purple-200 animate-pulse">
+            <Rocket className="w-4 h-4 mr-2" />
+            Welcome to TUG Hockey Lobbies
+          </div>
+          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-white">
+            Tournaments, Matchmaking, Markets — for Hockey Fans
+          </h1>
+          <p className="mt-4 text-slate-300 max-w-2xl">
+            Host drafts, analyze stats, and share live Discord activity. Bet on matches and settle markets from results.
+          </p>
+
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link to="/dashboard">
+              <Button className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700">
+                <LayoutDashboard className="w-4 h-4 mr-2" />
+                Open Dashboard
+              </Button>
+            </Link>
+            <Link to="/tournaments">
+              <Button variant="outline" className="border-purple-500 text-purple-200 hover:bg-purple-700/40">
+                <Trophy className="w-4 h-4 mr-2" />
+                Browse Tournaments
+              </Button>
+            </Link>
+            <Link to="/discord">
+              <Button variant="outline" className="border-indigo-500 text-indigo-200 hover:bg-indigo-700/40">
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Discord Integration
+              </Button>
+            </Link>
+          </div>
         </div>
 
-        {/* Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
-          {features.map((feature, index) => (
-            <Card 
-              key={index}
-              className="bg-gray-800/30 border-gray-700 hover:border-gray-500 transition-colors cursor-pointer"
-              onClick={feature.onClick}
-            >
-              <CardHeader>
-                <div className={`w-12 h-12 bg-gradient-to-br ${feature.color} rounded-lg flex items-center justify-center mb-4`}>
-                  <feature.icon className="w-6 h-6 text-white" />
-                </div>
-                <CardTitle className="text-white">{feature.title}</CardTitle>
-                <CardDescription className="text-gray-400">
-                  {feature.description}
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          ))}
-        </div>
+        {/* Live Matchmaking and Markets */}
+        <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-slate-900/50 border border-slate-700/60 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-white font-semibold">Live Matchmaking</div>
+              <Badge className="bg-blue-600/80">Hockey</Badge>
+            </div>
+            {/* Compact Queue Visual */}
+            <div className="relative rounded-lg overflow-hidden">
+              <img src="https://pub-cdn.sider.ai/u/U005HEVRO98/web-coder/68da03bcb54d8be52a93b613/resource/9c4720d6-7baf-4fd5-be04-6cfad17eaffc.jpg" className="object-cover w-full h-32" />
+              <div className="absolute inset-0 bg-gradient-to-r from-slate-900/70 to-purple-900/40" />
+              <div className="absolute bottom-2 left-3 right-3 text-slate-200 text-sm">
+                Queue up now and get matched with similar ELO players.
+              </div>
+            </div>
+            <div className="mt-3">
+              {/* Light inline call-to-action */}
+              <Link to="/dashboard">
+                <Button className="w-full bg-blue-600 hover:bg-blue-700">Open Queue</Button>
+              </Link>
+            </div>
+          </div>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
-          <Card className="bg-blue-900/20 border-blue-700">
-            <CardContent className="p-6 text-center">
-              <div className="text-2xl font-bold text-blue-400">1,247</div>
-              <div className="text-blue-300 text-sm">Active Players</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-green-900/20 border-green-700">
-            <CardContent className="p-6 text-center">
-              <div className="text-2xl font-bold text-green-400">42</div>
-              <div className="text-green-300 text-sm">Tournaments</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-purple-900/20 border-purple-700">
-            <CardContent className="p-6 text-center">
-              <div className="text-2xl font-bold text-purple-400">8,956</div>
-              <div className="text-purple-300 text-sm">Matches Played</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-yellow-900/20 border-yellow-700">
-            <CardContent className="p-6 text-center">
-              <div className="text-2xl font-bold text-yellow-400">$2,580</div>
-              <div className="text-yellow-300 text-sm">Prize Pool</div>
-            </CardContent>
-          </Card>
+          <div className="bg-slate-900/50 border border-slate-700/60 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-white font-semibold">Open Markets</div>
+              <Badge className="bg-emerald-600/80">Live</Badge>
+            </div>
+            {/* Mini markets hero */}
+            <div className="relative rounded-lg overflow-hidden">
+              <img src="https://pub-cdn.sider.ai/u/U005HEVRO98/web-coder/68da03bcb54d8be52a93b613/resource/c5843f54-6850-4d28-933e-2a01987df48e.jpg" className="object-cover w-full h-32" />
+              <div className="absolute inset-0 bg-gradient-to-r from-slate-900/70 to-emerald-900/30" />
+              <div className="absolute bottom-2 left-3 right-3 text-slate-200 text-sm">
+                Pick your winner and settle via CSV results after the game.
+              </div>
+            </div>
+            <div className="mt-3">
+              <Link to="/dashboard">
+                <Button className="w-full bg-emerald-600 hover:bg-emerald-700">View Markets</Button>
+              </Link>
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
+
+      {/* Quick Entrances + Live Panels */}
+      <section className="max-w-6xl mx-auto px-6 pb-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <FeatureCard
+            to="/tournaments"
+            icon={<Trophy className="w-5 h-5" />}
+            title="Tournaments"
+            description="Create, seed, and run events with rich player data."
+            badge="Organizer"
+          />
+          <FeatureCard
+            to="/host"
+            icon={<Swords className="w-5 h-5" />}
+            title="Host a Draft"
+            description="Spin up a lobby or draft room with a few clicks."
+            badge="Live"
+          />
+          <FeatureCard
+            to="/discord"
+            icon={<Gamepad2 className="w-5 h-5" />}
+            title="Discord Activity"
+            description="Update presence and invite players seamlessly."
+            badge="SDK"
+          />
+        </div>
+      </section>
+
+      {/* Discord SDK Preview */}
+      <section className="max-w-6xl mx-auto px-6 pb-24">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+          <Card className="bg-slate-900/50 border-slate-700/60">
+            <CardHeader>
+              <CardTitle className="text-white">Get Started</CardTitle>
+              <p className="text-slate-300">
+                Use the quick actions to jump into core workflows. Configure your Discord app to enable Activities.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Badge className="bg-green-700/80">Tip</Badge>
+                <span className="text-slate-200 text-sm">
+                  Set DISCORD_CLIENT_ID and DISCORD_CLIENT_SECRET on your deployment platform.
+                </span>
+              </div>
+              <ul className="list-disc list-inside text-slate-300 text-sm space-y-1">
+                <li>Authorize inside Discord, then complete auth via backend.</li>
+                <li>Update Activity to broadcast lobby status.</li>
+                <li>Share your lobby link in Discord.</li>
+              </ul>
+            </CardContent>
+          </Card>
+
+          {/* Live SDK Card */}
+          <div>
+            <DiscordActivitySDK clientId="1422066214666244227" />
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

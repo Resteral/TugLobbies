@@ -42,9 +42,9 @@ export default function NotFound() {
         <CardHeader className="text-center">
           <div className="text-6xl font-bold text-purple-400 mb-4">404</div>
           <CardTitle className="text-2xl text-white">Page Not Found</CardTitle>
-          <CardDescription className="text-gray-400 text-lg">
+          <p className="text-gray-400 text-lg">
             The page you're looking for doesn't exist or has been moved.
-          </CardDescription>
+          </p>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Quick Actions */}
